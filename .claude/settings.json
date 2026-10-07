@@ -1,0 +1,15 @@
+{
+  "enabledMcpjsonServers": ["supabase", "vercel", "github"],
+  "deniedMcpServers": [
+    { "serverName": "claude.ai Supabase" },
+    { "serverName": "claude.ai Vercel" },
+    { "serverName": "claude.ai GitHub" }
+  ],
+  "permissions": {
+    "deny": [
+      "mcp__claude_ai_Supabase",
+      "mcp__claude_ai_Vercel",
+      "mcp__claude_ai_GitHub"
+    ]
+  }
+}

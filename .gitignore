@@ -1,0 +1,32 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js / build
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+
+# --- Project-local secrets (never commit) ---
+.mcp.json
+.claude/settings.local.json
+.env
+.env*.local
+
+# vercel / supabase local state
+.vercel
+supabase/.temp
+supabase/.branches
