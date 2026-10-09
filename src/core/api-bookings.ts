@@ -87,7 +87,8 @@ export async function createOnlineRepairTicket(storeKey: string, input: RepairBo
     }
 
     // The time must be one we would offer right now: inside the published
-    // opening hours, far enough ahead, and not already booked.
+    // opening hours, far enough ahead, and not already full (public_booked_slots
+    // returns only slots at the shop's capacity).
     const now = new Date();
     const { from, to } = bookingWindow(now);
     const taken = await getBookedSlots(storeKey, from, to);
@@ -98,41 +99,38 @@ export async function createOnlineRepairTicket(storeKey: string, input: RepairBo
     const preLimited = await overLimit("repair_tickets", shop.shopId, input.customer.email, false);
     if (preLimited) return { ok: false, error: preLimited };
 
-    const { data, error } = await admin
-      .from("repair_tickets")
-      .insert({
-        shop_id: shop.shopId,
-        model_id: input.modelId,
-        repair_type_id: input.repairTypeId,
-        device_label: deviceLabel,
-        repair_label: repairLabel,
-        quoted_price_cents: price.price_cents,
-        scheduled_at: slot.iso,
-        status: "booked",
-        source: "online",
-        customer_name: input.customer.name,
-        customer_phone: input.customer.phone,
-        customer_email: input.customer.email,
-      })
-      .select("id")
-      .single();
-    if (error?.code === "23505") return { ok: false, error: "That time was just taken. Pick another.", field: "slot" };
-    if (error || !data) {
-      console.error("[bookings] repair insert failed", error?.message);
+    // Atomic: locks this shop + slot, checks the shop's slot capacity and
+    // inserts. Null = the slot filled up since the check above.
+    const { data: ticketId, error } = await admin.rpc("book_online_repair", {
+      p_shop_id: shop.shopId,
+      p_model_id: input.modelId,
+      p_repair_type_id: input.repairTypeId,
+      p_device_label: deviceLabel,
+      p_repair_label: repairLabel,
+      p_quoted_price_cents: price.price_cents,
+      p_scheduled_at: slot.iso,
+      p_customer_name: input.customer.name,
+      p_customer_phone: input.customer.phone,
+      p_customer_email: input.customer.email,
+    });
+    if (error) {
+      console.error("[bookings] repair booking rpc failed", error.message);
       return FAILED;
     }
+    if (!ticketId) return { ok: false, error: "That time was just taken. Pick another.", field: "slot" };
+
     // Authoritative limit: count with this row included, so parallel requests
     // cannot all pass. Over the limit → remove the row before any email.
     const postLimited = await overLimit("repair_tickets", shop.shopId, input.customer.email, true);
     if (postLimited) {
-      await admin.from("repair_tickets").delete().eq("id", data.id).eq("shop_id", shop.shopId);
+      await admin.from("repair_tickets").delete().eq("id", ticketId).eq("shop_id", shop.shopId);
       return { ok: false, error: postLimited };
     }
 
     return {
       ok: true,
       data: {
-        ticketId: data.id,
+        ticketId,
         shop,
         deviceLabel,
         repairLabel,

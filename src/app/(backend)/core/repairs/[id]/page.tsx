@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { Card, DetailList, Grid, Notice, Page, PageHeader, Skeleton, StatusBadge, Tag } from "@/components/ui";
-import { getRepairTicket, REPAIR_STATUSES, repairSourceLabel, repairStatus } from "@/core/repairs";
+import { Card, DetailList, Grid, Muted, Notice, Page, PageHeader, Skeleton, StatusBadge, Tag } from "@/components/ui";
+import { getRepairTicket, listRepairTicketNotes, REPAIR_STATUSES, repairSourceLabel, repairStatus } from "@/core/repairs";
 import { requireShop } from "@/core/shop";
 import { formatDateTime } from "@/lib/datetime";
 import { formatMoney } from "@/lib/money";
@@ -39,6 +39,7 @@ async function Ticket({ params, searchParams }: Pick<PageProps<"/core/repairs/[i
   const { shop } = await requireShop();
   const ticket = await getRepairTicket(shop.id, id);
   if (!ticket) notFound();
+  const notes = await listRepairTicketNotes(shop.id, ticket.id);
   const status = repairStatus(ticket.status);
 
   return (
@@ -50,6 +51,9 @@ async function Ticket({ params, searchParams }: Pick<PageProps<"/core/repairs/[i
       />
       {one(sp.created) ? <Notice tone="success">Ticket created.</Notice> : null}
       {one(sp.updated) ? <Notice tone="success">Ticket updated.</Notice> : null}
+      {one(sp.note) === "failed" ? (
+        <Notice tone="warning">The note wasn&apos;t saved with the ticket. Add it again below.</Notice>
+      ) : null}
 
       <Grid>
         <Card title="Customer">
@@ -75,7 +79,22 @@ async function Ticket({ params, searchParams }: Pick<PageProps<"/core/repairs/[i
         </Card>
       </Grid>
 
-      <StatusForm id={ticket.id} status={ticket.status} notes={ticket.notes} statuses={REPAIR_STATUSES} />
+      <Card title="Notes" description="Oldest first. Only your staff see notes.">
+        {notes.length === 0 ? (
+          <Muted>No notes yet. Add one when you update the ticket.</Muted>
+        ) : (
+          <ol className="flex flex-col gap-4">
+            {notes.map((n) => (
+              <li key={n.id} className="flex flex-col gap-1">
+                <Muted>{formatDateTime(n.created_at, shop.timezone)}</Muted>
+                <p className="whitespace-pre-wrap text-body text-fg">{n.body}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </Card>
+
+      <StatusForm id={ticket.id} status={ticket.status} statuses={REPAIR_STATUSES} />
     </Page>
   );
 }

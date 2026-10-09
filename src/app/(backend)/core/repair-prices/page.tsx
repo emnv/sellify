@@ -22,11 +22,12 @@ import {
   Tr,
 } from "@/components/ui";
 import { getCatalog } from "@/core/catalog";
-import { countRepairPrices, formatDuration, listRepairPrices, partsInStock } from "@/core/repairs";
+import { countRepairPrices, formatDuration, listRepairPrices, partsInStock, SLOT_CAPACITY_MAX } from "@/core/repairs";
 import { requireShop } from "@/core/shop";
 import { formatMoney } from "@/lib/money";
 import { removeRepairPrice } from "./actions";
 import { RepairPriceForm } from "./repair-price-form";
+import { SlotCapacityForm } from "./slot-capacity-form";
 
 export const metadata: Metadata = { title: "Repair prices · Sellify" };
 
@@ -68,6 +69,7 @@ async function RepairPrices({ searchParams }: Pick<PageProps<"/core/repair-price
   return (
     <>
       <RepairPriceForm brands={catalog.brands} repairTypes={catalog.repairTypes} />
+      <SlotCapacityForm capacity={shop.repair_slot_capacity} max={SLOT_CAPACITY_MAX} />
 
       <Card padding="none">
         {total === 0 ? (

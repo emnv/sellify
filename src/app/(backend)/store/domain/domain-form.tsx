@@ -14,7 +14,7 @@ export function ConnectDomainForm() {
           id="domain-input"
           label="Your domain"
           required
-          hint="Type it without https://, like fixitgalway.ie or shop.fixitgalway.ie. To use www too, connect www.fixitgalway.ie as its own domain or forward it at your domain provider."
+          hint="Type it without https://, like fixitgalway.ie or shop.fixitgalway.ie. If you connect fixitgalway.ie, we set up www.fixitgalway.ie to forward to it too."
           error={state.fieldError}
         >
           <Input
@@ -50,7 +50,7 @@ export function CheckStatusButton() {
   );
 }
 
-export function RemoveDomain({ domain }: { domain: string }) {
+export function RemoveDomain({ domain, www }: { domain: string; www: string | null }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -61,7 +61,7 @@ export function RemoveDomain({ domain }: { domain: string }) {
         open={open}
         onClose={() => setOpen(false)}
         title="Remove this domain?"
-        description={`Your store stops loading at ${domain}. Your Sellify address keeps working.`}
+        description={`Your store stops loading at ${domain}${www ? ` and ${www}` : ""}. Your Sellify address keeps working.`}
         footer={
           <>
             <Button variant="secondary" onClick={() => setOpen(false)}>

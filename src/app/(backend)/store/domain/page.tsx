@@ -19,7 +19,7 @@ import {
 import { requireShop } from "@/core/shop";
 import { formatDateTime } from "@/lib/datetime";
 import type { DomainStatus } from "@/lib/vercel/domains";
-import { getStoreDomain, type StoreDomain } from "@/stores/domains";
+import { getStoreDomain, OWNER_ONLY_MESSAGE, type StoreDomain } from "@/stores/domains";
 import { requireOwnerStore } from "@/stores/store";
 import { StoreHeader } from "../store-header";
 import { CheckStatusButton, ConnectDomainForm, RemoveDomain } from "./domain-form";
@@ -48,40 +48,51 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 async function Domain({ searchParams }: Pick<PageProps<"/store/domain">, "searchParams">) {
   const sp = await searchParams;
-  const { shop } = await requireShop();
+  const { shop, role } = await requireShop();
   const store = await requireOwnerStore();
   const domain = await getStoreDomain();
   const error = one(sp.domainError);
+  const canManage = role === "owner";
 
   return (
     <>
+      {canManage ? null : <Notice tone="info">{OWNER_ONLY_MESSAGE}</Notice>}
       {one(sp.connected) && domain ? <Notice tone="success" title="Domain added.">Now add the DNS records below at your domain provider.</Notice> : null}
       {one(sp.checked) && domain ? <Notice tone="info">Status checked. {domain.message}</Notice> : null}
       {one(sp.removed) ? <Notice tone="info">Domain removed. Your store is still at {store.liveUrl}.</Notice> : null}
       {error ? <Notice tone="danger">{error}</Notice> : null}
 
       {domain ? (
-        <ConnectedDomain domain={domain} timeZone={shop.timezone} />
+        <ConnectedDomain domain={domain} timeZone={shop.timezone} canManage={canManage} />
       ) : (
         <Card title="Connect your own domain" description="Use a web address you own, like fixitgalway.ie, instead of your Sellify address. You need to have bought the domain already.">
-          <ConnectDomainForm />
+          {canManage ? (
+            <ConnectDomainForm />
+          ) : (
+            <p className="text-body text-fg-muted">No domain is connected. Your store is at {store.liveUrl}.</p>
+          )}
         </Card>
       )}
     </>
   );
 }
 
-function ConnectedDomain({ domain, timeZone }: { domain: StoreDomain; timeZone: string }) {
+function ConnectedDomain({ domain, timeZone, canManage }: { domain: StoreDomain; timeZone: string; canManage: boolean }) {
   const status = STATUS[domain.status];
+  const www = domain.www;
+  const wwwStatus = www ? STATUS[www.status] : null;
+  const allLive = domain.status === "active" && (!www || www.status === "active");
   return (
     <>
       <Card
         title="Your domain"
         actions={
-          <>
-            <CheckStatusButton />
-            <RemoveDomain domain={domain.domain} />
-          </>
+          canManage ? (
+            <>
+              <CheckStatusButton />
+              <RemoveDomain domain={domain.domain} www={www?.domain ?? null} />
+            </>
+          ) : undefined
         }
       >
         <DetailList
@@ -91,6 +102,21 @@ function ConnectedDomain({ domain, timeZone }: { domain: StoreDomain; timeZone: 
               value: domain.status === "active" ? <TextLink href={`https://${domain.domain}`}>{domain.domain}</TextLink> : domain.domain,
             },
             { label: "Status", value: <StatusBadge tone={status.tone}>{status.label}</StatusBadge> },
+            ...(www && wwwStatus
+              ? [
+                  {
+                    label: "www address",
+                    value: (
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span>
+                          {www.domain} forwards to {domain.domain}
+                        </span>
+                        <StatusBadge tone={wwwStatus.tone}>{wwwStatus.label}</StatusBadge>
+                      </span>
+                    ),
+                  },
+                ]
+              : []),
             { label: "Last checked", value: domain.checkedAt ? formatDateTime(domain.checkedAt, timeZone) : "Not yet" },
             ...(domain.message ? [{ label: "What's next", value: domain.message }] : []),
           ]}
@@ -102,7 +128,7 @@ function ConnectedDomain({ domain, timeZone }: { domain: StoreDomain; timeZone: 
         ) : null}
       </Card>
 
-      {domain.status !== "active" && domain.records.length > 0 ? (
+      {!allLive && domain.records.length > 0 ? (
         <Card
           title="DNS records to add"
           description="Log in where you bought the domain, open DNS settings, add these records. Changes can take up to 48 hours. Then click Check status."
@@ -133,9 +159,9 @@ function ConnectedDomain({ domain, timeZone }: { domain: StoreDomain; timeZone: 
         </Card>
       ) : null}
 
-      {domain.status === "active" ? (
+      {allLive ? (
         <Notice tone="success" title="You're all set.">
-          Your store loads at https://{domain.domain} with a secure padlock. Keep the DNS records in place.
+          Your store loads at https://{domain.domain} with a secure padlock{www ? `, and ${www.domain} forwards to it` : ""}. Keep the DNS records in place.
         </Notice>
       ) : (
         <Notice tone="info">

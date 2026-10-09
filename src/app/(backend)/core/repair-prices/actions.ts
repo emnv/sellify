@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCatalog } from "@/core/catalog";
-import { readRepairPriceForm, repairPriceSchema } from "@/core/repairs";
+import { readRepairPriceForm, repairPriceSchema, slotCapacitySchema } from "@/core/repairs";
 import { requireShop } from "@/core/shop";
 import { createClient } from "@/lib/supabase/server";
 
@@ -46,6 +46,36 @@ export async function saveRepairPrice(_prev: RepairPriceFormState, formData: For
     saved: `Price saved for ${catalog.modelLabels[parsed.data.model_id]} · ${repair}.`,
     values: { model_id: values.model_id, repair_type_id: "", price: "", duration: "60" },
   };
+}
+
+export type SlotCapacityFormState = {
+  error?: string;
+  saved?: string;
+  fieldErrors?: Partial<Record<string, string>>;
+  values?: { capacity: string };
+};
+
+/** How many online repair bookings one time slot takes (shops.repair_slot_capacity). */
+export async function saveSlotCapacity(_prev: SlotCapacityFormState, formData: FormData): Promise<SlotCapacityFormState> {
+  const { shop } = await requireShop();
+  const values = { capacity: String(formData.get("capacity") ?? "") };
+  const parsed = slotCapacitySchema.safeParse(values);
+  if (!parsed.success) {
+    return { error: "Check the highlighted fields.", fieldErrors: fieldErrors(parsed.error), values };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("shops")
+    .update({ repair_slot_capacity: parsed.data.capacity })
+    .eq("id", shop.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { error: "Could not save the setting. Try again.", values };
+
+  revalidatePath("/core/repair-prices");
+  const n = parsed.data.capacity;
+  return { saved: `Saved. You now take ${n} ${n === 1 ? "repair" : "repairs"} per time slot.`, values };
 }
 
 export async function removeRepairPrice(formData: FormData) {

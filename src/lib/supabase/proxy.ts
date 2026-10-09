@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
 
 // Paths reachable without signing in. Everything else is the backend.
-const PUBLIC_PREFIXES = ["/login", "/signup", "/auth/", "/api/stripe/"];
+// /api/cron/* authenticates itself with CRON_SECRET; /api/stripe/* with webhook signatures.
+const PUBLIC_PREFIXES = ["/login", "/signup", "/auth/", "/api/stripe/", "/api/cron/"];
 
 export function isPublicPath(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p.endsWith("/") ? p : `${p}/`));

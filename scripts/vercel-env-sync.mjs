@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 // Plain config (non-secret) values; everything else is stored as Sensitive.
-const CONFIG_KEYS = new Set(["NEXT_PUBLIC_SUPABASE_URL", "EMAIL_FROM", "OPENAI_MODEL", "VERCEL_PROJECT_ID", "VERCEL_TEAM_ID", "STORES_ROOT_DOMAIN", "APP_URL"]);
+const CONFIG_KEYS = new Set(["NEXT_PUBLIC_SUPABASE_URL", "EMAIL_FROM", "OPENAI_MODEL", "VERCEL_PROJECT_ID", "VERCEL_TEAM_ID", "STORES_ROOT_DOMAIN", "APP_URL", "PLATFORM_FEE_BPS"]);
 
 const RUNTIME_KEYS = [
   "NEXT_PUBLIC_SUPABASE_URL",
@@ -23,6 +23,9 @@ const RUNTIME_KEYS = [
   "VERCEL_TEAM_ID",
   "STORES_ROOT_DOMAIN",
   "APP_URL",
+  "CRON_SECRET",
+  "PLATFORM_FEE_BPS",
+  "STRIPE_CONNECT_WEBHOOK_SECRET",
 ];
 
 const args = process.argv.slice(2);
@@ -49,6 +52,17 @@ const vercel = (argv, input) =>
 
 for (const key of RUNTIME_KEYS) {
   if (only && !only.includes(key)) continue;
+  // Production webhook secrets come from the Stripe endpoints, not from .env
+  // (which holds the local `stripe listen` secret). Never overwrite them by accident.
+  if (key === "STRIPE_WEBHOOK_SECRET" && !process.env.WEBHOOK_SECRET_FILE) {
+    console.log(`${key}: skipped (set WEBHOOK_SECRET_FILE to update it)`);
+    continue;
+  }
+  if (key === "STRIPE_CONNECT_WEBHOOK_SECRET" && !process.env.CONNECT_WEBHOOK_SECRET_FILE) {
+    console.log(`${key}: skipped (set CONNECT_WEBHOOK_SECRET_FILE to update it)`);
+    continue;
+  }
+  if (key === "STRIPE_CONNECT_WEBHOOK_SECRET") env[key] = readFileSync(process.env.CONNECT_WEBHOOK_SECRET_FILE, "utf8").trim();
   const value = env[key] ?? "";
   for (const target of ["production", "preview"]) {
     vercel(["env", "rm", key, target, "--yes"]); // replace if present

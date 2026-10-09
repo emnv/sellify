@@ -7,9 +7,16 @@ import { z } from "zod";
 //   POST   /v10/projects/{id}/domains                 add a domain to the project
 //   GET    /v9/projects/{id}/domains/{domain}         project domain (verified + verification challenges)
 //   POST   /v9/projects/{id}/domains/{domain}/verify  re-check the verification challenge
+//   PATCH  /v9/projects/{id}/domains/{domain}         update it (redirect / redirectStatusCode)
 //   DELETE /v9/projects/{id}/domains/{domain}         remove it from the project
 //   GET    /v6/domains/{domain}/config                DNS config (misconfigured, recommended A / CNAME)
 // Every call passes ?teamId=VERCEL_TEAM_ID.
+//
+// www: for an apex domain, www.<apex> is added as a project domain with
+// body { name, redirect: "<apex>", redirectStatusCode: 308 } (POST /v10 and
+// PATCH /v9 both accept redirect = "target destination domain" and
+// redirectStatusCode ∈ 301 | 302 | 307 | 308; checked 2026-10-10). Vercel then
+// answers www requests with the redirect itself; they never reach the app.
 //
 // The mapping helpers at the bottom are pure, so they are unit-tested without network.
 
@@ -28,7 +35,15 @@ export type VercelProjectDomain = {
   apexName: string;
   verified: boolean;
   verification?: VercelVerification[];
+  redirect?: string | null;
+  // Documented as integer on input; some response examples show a string.
+  redirectStatusCode?: number | string | null;
 };
+
+/** State of a project-domain check, plus whether Vercel sees it as an apex domain. */
+export type ProjectDomainCheck = DomainState & { isApex: boolean };
+
+export const WWW_REDIRECT_STATUS = 308;
 export type VercelDomainConfig = {
   misconfigured: boolean;
   configuredBy?: string | null;
@@ -89,6 +104,25 @@ export function addProjectDomain(domain: string) {
   return call<VercelProjectDomain>("POST", (p) => `/v10/projects/${p}/domains`, { body: { name: domain } });
 }
 
+/**
+ * Adds www.<apex> to the project as a 308 redirect to the apex. If it is
+ * already on the project (an earlier run, or added by hand), its redirect is
+ * set instead. The caller must make sure no other store owns www.<apex>.
+ */
+export async function addWwwRedirect(apex: string): Promise<VercelProjectDomain> {
+  const body = wwwRedirectBody(apex);
+  try {
+    return await call<VercelProjectDomain>("POST", (p) => `/v10/projects/${p}/domains`, { body });
+  } catch (e) {
+    const existing = await getProjectDomain(body.name).catch(() => null);
+    if (!existing) throw e;
+    if (isWwwRedirectTo(existing, apex)) return existing;
+    return call<VercelProjectDomain>("PATCH", (p) => `/v9/projects/${p}/domains/${d(body.name)}`, {
+      body: { redirect: body.redirect, redirectStatusCode: body.redirectStatusCode },
+    });
+  }
+}
+
 /** The project domain, or null when it is not on the project. */
 export async function getProjectDomain(domain: string): Promise<VercelProjectDomain | null> {
   try {
@@ -124,9 +158,9 @@ export function getDomainConfig(domain: string) {
  * its DNS config. Returns the mapped state; null project domain means the
  * domain is no longer on the Vercel project.
  */
-export async function checkProjectDomain(domain: string): Promise<DomainState> {
+export async function checkProjectDomain(domain: string): Promise<ProjectDomainCheck> {
   let project = await getProjectDomain(domain);
-  if (!project) return removedState();
+  if (!project) return { ...removedState(), isApex: false };
   if (!project.verified) {
     try {
       project = await verifyProjectDomain(domain);
@@ -137,7 +171,7 @@ export async function checkProjectDomain(domain: string): Promise<DomainState> {
     }
   }
   const config = await getDomainConfig(domain).catch(() => null);
-  return mapDomainState(project, config);
+  return { ...mapDomainState(project, config), isApex: isApexDomain(project) };
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +244,57 @@ export function mapDomainState(project: VercelProjectDomain, config: VercelDomai
 
 export function removedState(): DomainState {
   return { status: "error", records: [], message: "This domain is no longer connected. Remove it and connect it again." };
+}
+
+// ---------------------------------------------------------------------------
+// www variant (pure)
+
+/** True when Vercel reports the project domain as its own apex (fixitgalway.ie, not shop.fixitgalway.ie). */
+export function isApexDomain(project: Pick<VercelProjectDomain, "name" | "apexName">): boolean {
+  const name = project.name.toLowerCase().replace(/\.$/, "");
+  const apex = (project.apexName || project.name).toLowerCase().replace(/\.$/, "");
+  return name === apex;
+}
+
+/** www.<apex>; only meaningful for an apex domain. */
+export function wwwVariant(apex: string): string {
+  return `www.${apex.toLowerCase().replace(/\.$/, "")}`;
+}
+
+/** Request body that adds www.<apex> as a permanent (308) redirect to the apex. */
+export function wwwRedirectBody(apex: string): { name: string; redirect: string; redirectStatusCode: number } {
+  const root = apex.toLowerCase().replace(/\.$/, "");
+  return { name: wwwVariant(root), redirect: root, redirectStatusCode: WWW_REDIRECT_STATUS };
+}
+
+/** True when the project domain already redirects to the apex with 308. Tolerates "https://apex" and a string status. */
+export function isWwwRedirectTo(project: Pick<VercelProjectDomain, "redirect" | "redirectStatusCode">, apex: string): boolean {
+  const target = (project.redirect ?? "").toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "").replace(/\.$/, "");
+  return target === apex.toLowerCase().replace(/\.$/, "") && Number(project.redirectStatusCode) === WWW_REDIRECT_STATUS;
+}
+
+export type WwwState = { domain: string; status: DomainStatus; records: DnsRecord[]; note: string | null };
+
+/**
+ * Merges the www redirect's state into the apex state. The apex status drives
+ * routing and stays as is; the www records are shown alongside the apex ones
+ * (deduplicated: both may share the _vercel TXT name), and the message says
+ * when www still needs its record.
+ */
+export function combineWithWww(apex: DomainState, www: WwwState | null): DomainState {
+  if (!www) return apex;
+  const seen = new Set(apex.records.map((r) => `${r.type}|${r.name}|${r.value}`));
+  const records = [...apex.records];
+  for (const r of www.records) {
+    const key = `${r.type}|${r.name}|${r.value}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    records.push(r);
+  }
+  let message = apex.message;
+  if (www.note) message = `${message} ${www.note}`;
+  else if (www.status !== "active") message = `${message} Add the ${www.domain} record too, so www forwards to your store.`;
+  return { ...apex, records, message };
 }
 
 /** Plain-language message for an API error from adding a domain. */

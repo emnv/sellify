@@ -6,9 +6,10 @@ import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from
 import { checkoutAction, quoteBasketAction } from "@/app/(store)/s/[key]/basket/actions";
 import type { OrderQuote } from "@/core/api-orders";
 import { BASKET_MAX_QTY, type QuotedLine } from "@/lib/basket-total";
+import { deliveryFeeFor, fulfilmentLabel, offeredFulfilments, PAYMENTS_OFF_MESSAGE, type Fulfilment } from "@/lib/fulfilment";
 import { formatMoney } from "@/lib/money";
 import { useBasket, type BasketLine } from "@/stores/basket";
-import { StoreButton, StoreCard, StoreLinkButton, StoreNotice } from "./ui";
+import { OptionButton, StoreButton, StoreCard, StoreLinkButton, StoreNotice } from "./ui";
 
 // Basket UI. The basket in localStorage holds ids and quantities only; what is
 // shown (names, prices, stock, total) is the server's live quote.
@@ -44,6 +45,7 @@ export function BasketView({ storeKey, base, preview }: { storeKey: string; base
   const [quote, setQuote] = useState<OrderQuote | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notices, setNotices] = useState<string[]>([]);
+  const [choice, setChoice] = useState<Fulfilment | null>(null);
   const [checkingOut, startCheckout] = useTransition();
   const request = useRef(0);
   const linesKey = JSON.stringify(lines);
@@ -87,11 +89,16 @@ export function BasketView({ storeKey, base, preview }: { storeKey: string; base
     basket.setQty(productId, qty);
   }
 
+  const offered = quote ? offeredFulfilments(quote.fulfilment) : [];
+  const fulfilment: Fulfilment | null = choice && offered.includes(choice) ? choice : (offered[0] ?? null);
+  const deliveryFee = quote && fulfilment ? deliveryFeeFor(fulfilment, quote.fulfilment) : 0;
+
   function checkout() {
+    if (!fulfilment) return;
     setNotices([]);
     setError(null);
     startCheckout(async () => {
-      const res = await checkoutAction(storeKey, lines);
+      const res = await checkoutAction(storeKey, lines, fulfilment);
       // Only reached on failure: success redirects to Stripe.
       if (res?.error) {
         setError(res.error);
@@ -162,14 +169,53 @@ export function BasketView({ storeKey, base, preview }: { storeKey: string; base
 
       <StoreCard className="flex h-fit flex-col gap-4 p-6">
         <h2 className="font-store-heading text-store-xl font-bold">Summary</h2>
-        <div className="flex items-baseline justify-between">
-          <span className="text-store-muted">Total</span>
-          <span className="text-store-2xl font-bold" aria-live="polite">
-            {quote && !loading ? formatMoney(quote.totalCents, quote.currency) : "…"}
-          </span>
+
+        {quote && offered.length > 0 ? (
+          <div className="flex flex-col gap-2" role="group" aria-labelledby="pay-fulfilment-heading">
+            <h3 id="pay-fulfilment-heading" className="text-store-sm font-semibold">
+              How do you want to get your order?
+            </h3>
+            {offered.map((f) => {
+              const fee = deliveryFeeFor(f, quote.fulfilment);
+              return (
+                <OptionButton key={f} selected={fulfilment === f} disabled={checkingOut} onClick={() => setChoice(f)}>
+                  <span>{fulfilmentLabel(f)}</span>
+                  <span className="text-store-sm">{f === "delivery" ? (fee > 0 ? formatMoney(fee, quote.currency) : "Free") : "Free"}</span>
+                </OptionButton>
+              );
+            })}
+            {fulfilment === "delivery" ? <p className="text-store-sm text-store-muted">You give your delivery address (Ireland or UK) when you pay.</p> : null}
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-1">
+          {fulfilment === "delivery" ? (
+            <>
+              <div className="flex items-baseline justify-between text-store-sm">
+                <span className="text-store-muted">Items</span>
+                <span>{quote && !loading ? formatMoney(quote.totalCents, quote.currency) : "…"}</span>
+              </div>
+              <div className="flex items-baseline justify-between text-store-sm">
+                <span className="text-store-muted">Delivery</span>
+                <span>{quote ? (deliveryFee > 0 ? formatMoney(deliveryFee, quote.currency) : "Free") : "…"}</span>
+              </div>
+            </>
+          ) : null}
+          <div className="flex items-baseline justify-between">
+            <span className="text-store-muted">Total</span>
+            <span className="text-store-2xl font-bold" aria-live="polite">
+              {quote && !loading ? formatMoney(quote.totalCents + deliveryFee, quote.currency) : "…"}
+            </span>
+          </div>
         </div>
-        <p className="text-store-sm text-store-muted">Prices and stock are checked again when you pay.</p>
-        <StoreButton full disabled={preview || loading || checkingOut || !quote || quote.itemCount === 0} onClick={checkout}>
+
+        {quote && !quote.paymentsReady ? <StoreNotice>{PAYMENTS_OFF_MESSAGE}</StoreNotice> : null}
+        <p className="text-store-sm text-store-muted">Prices and stock are checked again when you pay. We hold your items for 30 minutes while you pay.</p>
+        <StoreButton
+          full
+          disabled={preview || loading || checkingOut || !quote || quote.itemCount === 0 || !quote.paymentsReady || !fulfilment}
+          onClick={checkout}
+        >
           {checkingOut ? "Opening secure payment…" : "Checkout"}
         </StoreButton>
         {preview ? <p className="text-store-sm text-store-muted">Checkout is turned off in the preview. Customers pay on your published store.</p> : null}

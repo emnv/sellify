@@ -350,6 +350,48 @@ export type Database = {
           },
         ]
       }
+      repair_ticket_notes: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: number
+          shop_id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: never
+          shop_id: string
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: never
+          shop_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_ticket_notes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_ticket_notes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "repair_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       repair_tickets: {
         Row: {
           created_at: string
@@ -499,10 +541,14 @@ export type Database = {
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          delivery_fee_cents: number
+          fulfilment: string | null
           id: string
           note: string | null
           paid_at: string | null
           payment_method: string | null
+          reserved_until: string | null
+          shipping_address: Json | null
           shop_id: string
           status: string
           stripe_session_id: string | null
@@ -514,10 +560,14 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivery_fee_cents?: number
+          fulfilment?: string | null
           id?: string
           note?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          reserved_until?: string | null
+          shipping_address?: Json | null
           shop_id: string
           status?: string
           stripe_session_id?: string | null
@@ -529,10 +579,14 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivery_fee_cents?: number
+          fulfilment?: string | null
           id?: string
           note?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          reserved_until?: string | null
+          shipping_address?: Json | null
           shop_id?: string
           status?: string
           stripe_session_id?: string | null
@@ -580,37 +634,58 @@ export type Database = {
       shops: {
         Row: {
           address: string | null
+          collection_enabled: boolean
           created_at: string
           currency: string
+          delivery_enabled: boolean
+          delivery_fee_cents: number
           email: string | null
           id: string
           name: string
           notification_email: string | null
           phone: string | null
+          repair_slot_capacity: number
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean
+          stripe_details_submitted: boolean
           timezone: string
           updated_at: string
         }
         Insert: {
           address?: string | null
+          collection_enabled?: boolean
           created_at?: string
           currency?: string
+          delivery_enabled?: boolean
+          delivery_fee_cents?: number
           email?: string | null
           id?: string
           name: string
           notification_email?: string | null
           phone?: string | null
+          repair_slot_capacity?: number
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_details_submitted?: boolean
           timezone?: string
           updated_at?: string
         }
         Update: {
           address?: string | null
+          collection_enabled?: boolean
           created_at?: string
           currency?: string
+          delivery_enabled?: boolean
+          delivery_fee_cents?: number
           email?: string | null
           id?: string
           name?: string
           notification_email?: string | null
           phone?: string | null
+          repair_slot_capacity?: number
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_details_submitted?: boolean
           timezone?: string
           updated_at?: string
         }
@@ -776,6 +851,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      book_online_repair: {
+        Args: {
+          p_customer_email: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_device_label: string
+          p_model_id: number
+          p_quoted_price_cents: number
+          p_repair_label: string
+          p_repair_type_id: number
+          p_scheduled_at: string
+          p_shop_id: string
+        }
+        Returns: string
+      }
       create_shop: {
         Args: { p_email?: string; p_name: string }
         Returns: string
@@ -823,6 +913,15 @@ export type Database = {
           p_shop_id: string
         }
         Returns: string
+      }
+      release_expired_reservations: {
+        Args: { p_grace_minutes?: number }
+        Returns: number
+      }
+      release_online_sale: { Args: { p_sale_id: string }; Returns: boolean }
+      reserve_online_sale: {
+        Args: { p_minutes?: number; p_sale_id: string }
+        Returns: boolean
       }
     }
     Enums: {

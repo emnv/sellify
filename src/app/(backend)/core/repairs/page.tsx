@@ -31,6 +31,7 @@ import {
   repairSourceLabel,
   repairStatus,
   TICKET_LIMIT,
+  TICKET_WHEN,
 } from "@/core/repairs";
 import { requireShop } from "@/core/shop";
 import { formatDateTime } from "@/lib/datetime";
@@ -61,15 +62,22 @@ function one(v: string | string[] | undefined) {
 
 async function TicketList({ searchParams }: Pick<PageProps<"/core/repairs">, "searchParams">) {
   const sp = await searchParams;
-  const params = { q: one(sp.q), status: one(sp.status), source: one(sp.source) };
+  const params = { q: one(sp.q), status: one(sp.status), source: one(sp.source), when: one(sp.when) };
   const { shop } = await requireShop();
   const [tickets, counts] = await Promise.all([listRepairTickets(shop.id, params), countRepairTicketsByStatus(shop.id)]);
-  const filtered = Boolean(params.q || params.status || params.source);
+  const filtered = Boolean(params.q || params.status || params.source || params.when);
 
   return (
     <Card padding="none">
       <FilterBar>
         <FilterSearch basePath={BASE} params={params} placeholder="Search customer or device" />
+        <FilterPills
+          basePath={BASE}
+          params={params}
+          param="when"
+          label="When"
+          options={[{ value: undefined, label: "All" }, ...TICKET_WHEN.map((w) => ({ value: w.value, label: w.label }))]}
+        />
         <FilterPills
           basePath={BASE}
           params={params}
@@ -151,7 +159,7 @@ async function TicketList({ searchParams }: Pick<PageProps<"/core/repairs">, "se
           <TableFooter>
             <span>
               {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
-              {tickets.length === TICKET_LIMIT ? ` (showing the ${TICKET_LIMIT} most recent)` : ""}
+              {tickets.length === TICKET_LIMIT ? ` (showing the first ${TICKET_LIMIT})` : ""}
             </span>
           </TableFooter>
         </>

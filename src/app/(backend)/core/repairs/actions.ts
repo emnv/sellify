@@ -33,7 +33,7 @@ function fieldErrors(error: z.ZodError) {
 }
 
 export async function createTicket(_prev: TicketFormState, formData: FormData): Promise<TicketFormState> {
-  const { shop } = await requireShop();
+  const { shop, user } = await requireShop();
   const catalog = await getCatalog();
   const values = readTicketForm(formData);
   const parsed = ticketSchema(catalog).safeParse(values);
@@ -90,18 +90,26 @@ export async function createTicket(_prev: TicketFormState, formData: FormData): 
       customer_name: t.customer_name,
       customer_phone: t.customer_phone,
       customer_email: t.customer_email,
-      notes: t.notes,
     })
     .select("id")
     .single();
   if (error || !data) return { error: "Could not create the ticket. Try again.", values };
 
+  // Notes live in the ticket's notes history (repair_tickets.notes is no longer written).
+  let noteFailed = false;
+  if (t.notes) {
+    const note = await supabase
+      .from("repair_ticket_notes")
+      .insert({ shop_id: shop.id, ticket_id: data.id, body: t.notes, author_id: user.id });
+    noteFailed = Boolean(note.error);
+  }
+
   revalidatePath("/core/repairs");
-  redirect(`/core/repairs/${data.id}?created=1`);
+  redirect(`/core/repairs/${data.id}?created=1${noteFailed ? "&note=failed" : ""}`);
 }
 
 export async function updateTicket(_prev: TicketUpdateState, formData: FormData): Promise<TicketUpdateState> {
-  const { shop } = await requireShop();
+  const { shop, user } = await requireShop();
   const id = String(formData.get("id") ?? "");
   const values = readTicketUpdateForm(formData);
   if (!z.uuid().safeParse(id).success) return { error: "Could not find this ticket. Reload the page and try again.", values };
@@ -114,12 +122,22 @@ export async function updateTicket(_prev: TicketUpdateState, formData: FormData)
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("repair_tickets")
-    .update({ status: parsed.data.status, notes: parsed.data.notes })
+    .update({ status: parsed.data.status })
     .eq("id", id)
     .eq("shop_id", shop.id)
     .select("id")
     .maybeSingle();
   if (error || !data) return { error: "Could not update the ticket. Try again.", values };
+
+  if (parsed.data.note) {
+    const note = await supabase
+      .from("repair_ticket_notes")
+      .insert({ shop_id: shop.id, ticket_id: id, body: parsed.data.note, author_id: user.id });
+    if (note.error) {
+      revalidatePath(`/core/repairs/${id}`);
+      return { error: "The status was saved, but the note wasn't. Try adding the note again.", values };
+    }
+  }
 
   revalidatePath("/core/repairs");
   revalidatePath(`/core/repairs/${id}`);

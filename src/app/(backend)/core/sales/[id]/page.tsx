@@ -21,6 +21,7 @@ import {
 import { getSale, paymentMethodLabel, saleChannelLabel, saleStatusLabel, saleStatusTone } from "@/core/sales";
 import { requireShop } from "@/core/shop";
 import { formatDateTime } from "@/lib/datetime";
+import { addressLines, fulfilmentLabel, toShippingAddress } from "@/lib/fulfilment";
 import { formatMoney } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Sale · Sellify" };
@@ -50,6 +51,7 @@ async function SaleDetail({ params, searchParams }: Pick<PageProps<"/core/sales/
 
   const items = sale.sale_items;
   const itemCount = items.reduce((sum, i) => sum + i.qty, 0);
+  const address = addressLines(toShippingAddress(sale.shipping_address));
 
   return (
     <Page>
@@ -70,6 +72,21 @@ async function SaleDetail({ params, searchParams }: Pick<PageProps<"/core/sales/
             { label: "Customer name", value: sale.customer_name ?? (sale.channel === "pos" ? "Walk-in customer" : null) },
             { label: "Customer email", value: sale.customer_email },
             { label: "Customer phone", value: sale.customer_phone },
+            ...(sale.fulfilment ? [{ label: "Fulfilment", value: fulfilmentLabel(sale.fulfilment) }] : []),
+            ...(sale.fulfilment === "delivery"
+              ? [
+                  {
+                    label: "Delivery address",
+                    value: address.length ? (
+                      <span className="flex flex-col">
+                        {address.map((line, i) => (
+                          <span key={`${line}-${i}`}>{line}</span>
+                        ))}
+                      </span>
+                    ) : null,
+                  },
+                ]
+              : []),
             ...(sale.note ? [{ label: "Note", value: sale.note }] : []),
           ]}
         />
@@ -110,6 +127,16 @@ async function SaleDetail({ params, searchParams }: Pick<PageProps<"/core/sales/
                 </Tr>
               ))
             )}
+            {sale.fulfilment === "delivery" ? (
+              <tr>
+                <Td colSpan={3} align="right">
+                  Delivery
+                </Td>
+                <Td align="right" nowrap>
+                  {formatMoney(sale.delivery_fee_cents, shop.currency)}
+                </Td>
+              </tr>
+            ) : null}
             <tr>
               <Td colSpan={3} align="right">
                 <span className="font-medium">Total</span>

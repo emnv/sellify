@@ -11,6 +11,11 @@ const {
   VercelApiError,
   DEFAULT_A_RECORD,
   DEFAULT_CNAME,
+  isApexDomain,
+  wwwVariant,
+  wwwRedirectBody,
+  isWwwRedirectTo,
+  combineWithWww,
 } = await import("./domains");
 
 // Sample payloads shaped like the Vercel REST API responses.
@@ -109,6 +114,77 @@ describe("parseCustomDomain", () => {
     for (const bad of ["localhost", "shop.localhost", "sellify-lemon.vercel.app", "sellify.app", "fixit.sellify.app", "app.sellify.app"]) {
       expect(parseCustomDomain(bad, opts).ok).toBe(false);
     }
+  });
+});
+
+describe("www variant", () => {
+  const wwwUnverified = {
+    name: "www.fixitgalway.ie",
+    apexName: "fixitgalway.ie",
+    verified: false,
+    redirect: "fixitgalway.ie",
+    redirectStatusCode: 308,
+    verification: [
+      { type: "TXT", domain: "_vercel.fixitgalway.ie", value: "vc-domain-verify=fixitgalway.ie,abc123" },
+      { type: "TXT", domain: "_vercel.fixitgalway.ie", value: "vc-domain-verify=www.fixitgalway.ie,def456" },
+    ],
+  };
+
+  it("only an apex domain gets a www variant", () => {
+    expect(isApexDomain(apexUnverified)).toBe(true);
+    expect(isApexDomain(subVerified)).toBe(false);
+    expect(isApexDomain({ name: "www.fixitgalway.ie", apexName: "fixitgalway.ie" })).toBe(false);
+    expect(isApexDomain({ name: "fixit.co.uk", apexName: "fixit.co.uk" })).toBe(true);
+    expect(isApexDomain({ name: "shop.fixit.co.uk", apexName: "fixit.co.uk" })).toBe(false);
+  });
+
+  it("adds www as a 308 redirect to the bare apex", () => {
+    expect(wwwVariant("FixItGalway.ie.")).toBe("www.fixitgalway.ie");
+    expect(wwwRedirectBody("fixitgalway.ie")).toEqual({ name: "www.fixitgalway.ie", redirect: "fixitgalway.ie", redirectStatusCode: 308 });
+  });
+
+  it("recognises an existing redirect, including string status and https:// target", () => {
+    expect(isWwwRedirectTo({ redirect: "fixitgalway.ie", redirectStatusCode: 308 }, "fixitgalway.ie")).toBe(true);
+    expect(isWwwRedirectTo({ redirect: "https://fixitgalway.ie/", redirectStatusCode: "308" }, "fixitgalway.ie")).toBe(true);
+    expect(isWwwRedirectTo({ redirect: "fixitgalway.ie", redirectStatusCode: 307 }, "fixitgalway.ie")).toBe(false);
+    expect(isWwwRedirectTo({ redirect: null, redirectStatusCode: null }, "fixitgalway.ie")).toBe(false);
+    expect(isWwwRedirectTo({ redirect: "other.ie", redirectStatusCode: 308 }, "fixitgalway.ie")).toBe(false);
+  });
+
+  it("www DNS record is a CNAME named www with the recommended value", () => {
+    expect(dnsRecordsFor({ ...wwwUnverified, verified: true }, misconfigured)).toEqual([{ type: "CNAME", name: "www", value: "abc123.vercel-dns-017.com" }]);
+    expect(dnsRecordsFor({ ...wwwUnverified, verified: true }, null)).toEqual([{ type: "CNAME", name: "www", value: DEFAULT_CNAME }]);
+  });
+
+  it("shows www records alongside the apex ones without duplicates; apex status wins", () => {
+    const apex = mapDomainState(apexUnverified, misconfigured);
+    const www = mapDomainState(wwwUnverified, misconfigured);
+    const combined = combineWithWww(apex, { domain: "www.fixitgalway.ie", status: www.status, records: www.records, note: null });
+    expect(combined.status).toBe("pending");
+    expect(combined.records).toEqual([
+      { type: "A", name: "@", value: "76.76.21.99" },
+      { type: "TXT", name: "_vercel", value: "vc-domain-verify=fixitgalway.ie,abc123" },
+      { type: "CNAME", name: "www", value: "abc123.vercel-dns-017.com" },
+      { type: "TXT", name: "_vercel", value: "vc-domain-verify=www.fixitgalway.ie,def456" },
+    ]);
+    expect(combined.message).toMatch(/www\.fixitgalway\.ie/);
+  });
+
+  it("an active apex stays active while www still needs its record", () => {
+    const apex = mapDomainState({ ...apexUnverified, verified: true }, configured);
+    const combined = combineWithWww(apex, { domain: "www.fixitgalway.ie", status: "verified", records: [{ type: "CNAME", name: "www", value: DEFAULT_CNAME }], note: null });
+    expect(combined.status).toBe("active");
+    expect(combined.records.map((r) => r.name)).toEqual(["@", "www"]);
+    expect(combined.message).toMatch(/www forwards/);
+  });
+
+  it("no www (subdomain) leaves the state untouched; a note replaces the default hint", () => {
+    const sub = mapDomainState(subVerified, configured);
+    expect(combineWithWww(sub, null)).toBe(sub);
+    const apex = mapDomainState({ ...apexUnverified, verified: true }, configured);
+    const noted = combineWithWww(apex, { domain: "www.fixitgalway.ie", status: "error", records: [], note: "Taken elsewhere." });
+    expect(noted.message.endsWith("Taken elsewhere.")).toBe(true);
+    expect(noted.records).toEqual(apex.records);
   });
 });
 

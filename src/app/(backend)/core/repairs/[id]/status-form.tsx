@@ -7,18 +7,17 @@ import { updateTicket, type TicketUpdateState } from "../actions";
 type Props = {
   id: string;
   status: string;
-  notes: string | null;
   statuses: ReadonlyArray<{ value: string; label: string }>;
 };
 
-export function StatusForm({ id, status, notes, statuses }: Props) {
+export function StatusForm({ id, status, statuses }: Props) {
   const [state, formAction] = useActionState<TicketUpdateState, FormData>(updateTicket, {});
   // React 19 resets the form after the action; defaultValue from state keeps what was typed.
   const v = state.values;
   const err = state.fieldErrors ?? {};
 
   return (
-    <Card title="Status" description="Keep the status current so you and your staff know what to do next.">
+    <Card title="Update ticket" description="Keep the status current so you and your staff know what to do next.">
       <form action={formAction}>
         <HiddenField name="id" value={id} />
         <FormStack>
@@ -32,8 +31,8 @@ export function StatusForm({ id, status, notes, statuses }: Props) {
               ))}
             </Select>
           </Field>
-          <Field id="ticket-notes" label="Notes" hint="Only your staff see these." error={err.notes}>
-            <Textarea id="ticket-notes" name="notes" maxLength={2000} defaultValue={v?.notes ?? notes ?? ""} invalid={!!err.notes} hasHint />
+          <Field id="ticket-note" label="Add a note" hint="Optional. Added to the notes history. Only your staff see notes." error={err.note}>
+            <Textarea id="ticket-note" name="note" maxLength={2000} defaultValue={v?.note ?? ""} invalid={!!err.note} hasHint />
           </Field>
           <FormActions>
             <SubmitButton pendingText="Updating…">Update ticket</SubmitButton>

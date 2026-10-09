@@ -33,7 +33,7 @@ export type SlotOptions = {
   slotMinutes?: number;
   /** No bookings starting sooner than this from now. */
   leadMinutes?: number;
-  /** Start times that already have a booking (any ISO format). */
+  /** Start times that are full, i.e. at the shop's repair_slot_capacity (any ISO format). */
   taken?: Iterable<string>;
 };
 

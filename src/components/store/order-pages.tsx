@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderForStore } from "@/core/api-orders";
+import { addressLines, fulfilmentLabel } from "@/lib/fulfilment";
 import { formatMoney } from "@/lib/money";
 import { BasketView, ClearBasket, PendingRefresher } from "./basket-page";
 import { storeHref, type StoreCtx } from "./context";
@@ -23,6 +24,14 @@ export async function OrderPage({ ctx, saleId, sessionId }: { ctx: StoreCtx; sal
   const order = await getOrderForStore(ctx.storeKey, saleId, sessionId);
   if (!order) notFound();
   const money = (c: number) => formatMoney(c, order.currency);
+  // The delivery address is personal: only shown to the customer who paid (matching session).
+  const address = addressLines(order.customer?.shippingAddress ?? null);
+  const nextStep =
+    order.fulfilment === "delivery"
+      ? "The shop will let you know when your order is on its way."
+      : order.fulfilment === "collection"
+        ? "The shop will let you know when your order is ready to collect."
+        : "The shop will be in touch about collection or delivery.";
 
   const heading =
     order.status === "paid"
@@ -46,7 +55,7 @@ export async function OrderPage({ ctx, saleId, sessionId }: { ctx: StoreCtx; sal
         {order.status === "paid" ? (
           <StoreNotice>
             {order.customer?.email ? `A confirmation is on its way to ${order.customer.email}. If it doesn't arrive, keep your order number. ` : "Keep your order number. "}
-            The shop will be in touch about collection or delivery.
+            {nextStep}
           </StoreNotice>
         ) : order.status === "pending" ? (
           <StoreNotice>
@@ -74,11 +83,32 @@ export async function OrderPage({ ctx, saleId, sessionId }: { ctx: StoreCtx; sal
               <span className="font-semibold">{money(item.unitPriceCents * item.qty)}</span>
             </div>
           ))}
+          {order.fulfilment === "delivery" ? (
+            <div className="flex items-baseline justify-between gap-4 p-4">
+              <span>Delivery</span>
+              <span className="font-semibold">{order.deliveryFeeCents > 0 ? money(order.deliveryFeeCents) : "Free"}</span>
+            </div>
+          ) : null}
           <div className="flex items-baseline justify-between gap-4 p-4">
             <span className="font-semibold">Total</span>
             <span className="text-store-xl font-bold">{money(order.totalCents)}</span>
           </div>
         </StoreCard>
+
+        {order.fulfilment ? (
+          <StoreCard className="flex flex-col gap-1 p-4">
+            <p className="text-store-sm font-semibold text-store-muted">{order.fulfilment === "delivery" ? "Delivery to" : "Collection"}</p>
+            {order.fulfilment === "delivery" ? (
+              address.length ? (
+                address.map((line, i) => <span key={`${line}-${i}`}>{line}</span>)
+              ) : (
+                <span>The address given when paying.</span>
+              )
+            ) : (
+              <span>{fulfilmentLabel(order.fulfilment)}</span>
+            )}
+          </StoreCard>
+        ) : null}
 
         <div className="flex flex-wrap gap-3">
           <StoreLinkButton href={storeHref(ctx, "/shop")} variant="outline">
