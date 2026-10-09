@@ -45,7 +45,7 @@ export async function OrderPage({ ctx, saleId, sessionId }: { ctx: StoreCtx; sal
 
         {order.status === "paid" ? (
           <StoreNotice>
-            {order.customer?.email ? `We have sent a confirmation to ${order.customer.email}. ` : ""}
+            {order.customer?.email ? `A confirmation is on its way to ${order.customer.email}. If it doesn't arrive, keep your order number. ` : "Keep your order number. "}
             The shop will be in touch about collection or delivery.
           </StoreNotice>
         ) : order.status === "pending" ? (
