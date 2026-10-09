@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { Skeleton } from "@/components/ui";
 import { getCurrentShop } from "@/core/shop";
 import { requireUser } from "@/lib/auth";
 import { OnboardingForm } from "./onboarding-form";
@@ -9,11 +10,9 @@ export const metadata: Metadata = { title: "Set up your shop · Sellify" };
 
 export default function OnboardingPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <Suspense fallback={<p className="text-sm">Loading…</p>}>
-        <Onboarding />
-      </Suspense>
-    </main>
+    <Suspense fallback={<Skeleton lines={5} />}>
+      <Onboarding />
+    </Suspense>
   );
 }
 

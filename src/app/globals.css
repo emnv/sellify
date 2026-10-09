@@ -1,26 +1,114 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Sellify platform design tokens. Source of truth: docs/brand/sellify-platform.md
+ *
+ * Tailwind's default palette, type scale, radii and shadows are removed
+ * (`initial`), so only these tokens exist as utilities. A page cannot use an
+ * off-brand `bg-red-500` or `text-3xl`: those classes produce no style.
+ */
+@theme {
+  /* ---- Colours ---------------------------------------------------------- */
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Brand (logo purple). Identity: logo, active navigation, highlights. */
+  --color-brand: #9333ea;
+  --color-brand-strong: #7c3aed;
+  --color-brand-soft: #f3e8ff;
+
+  /* Primary action (Sellify teal, darkened for 5.5:1 contrast with white). */
+  --color-primary: #0f766e;
+  --color-primary-hover: #115e59;
+  --color-primary-soft: #ccfbf1;
+  /* Sellify teal as on sellify.market: focus rings and accents, never text. */
+  --color-accent: #14b8a6;
+
+  /* Surfaces and lines */
+  --color-canvas: #f9fafb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f6;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  /* Text */
+  --color-fg: #111827;
+  --color-fg-muted: #4b5563;
+  --color-fg-subtle: #6b7280;
+  --color-fg-inverse: #ffffff;
+
+  /* Status: `-fg` on `-bg` passes WCAG AA. `danger` is also a button fill. */
+  --color-success-fg: #15803d;
+  --color-success-bg: #dcfce7;
+  --color-warning-fg: #b45309;
+  --color-warning-bg: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-danger-fg: #b91c1c;
+  --color-danger-bg: #fee2e2;
+  --color-info-fg: #1d4ed8;
+  --color-info-bg: #dbeafe;
+  --color-neutral-fg: #374151;
+  --color-neutral-bg: #f3f4f6;
+
+  /* ---- Typography ------------------------------------------------------- */
+  --font-*: initial;
+  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-*: initial;
+  --text-title: 1.5rem;            /* 24px page title */
+  --text-title--line-height: 2rem;
+  --text-heading: 1.125rem;        /* 18px section heading */
+  --text-heading--line-height: 1.75rem;
+  --text-body: 0.875rem;           /* 14px body, inputs, buttons */
+  --text-body--line-height: 1.25rem;
+  --text-small: 0.75rem;           /* 12px hints, badges, table meta */
+  --text-small--line-height: 1rem;
+
+  /* ---- Shape and depth -------------------------------------------------- */
+  --radius-*: initial;
+  --radius-sm: 6px;    /* badges, tags, checkboxes */
+  --radius-md: 8px;    /* inputs, selects, small buttons */
+  --radius-lg: 12px;   /* buttons, cards, modals */
+  --radius-full: 9999px; /* filter pills, switches, avatars */
+
+  --shadow-*: initial;
+  --shadow-card: 0 1px 2px 0 rgb(16 24 40 / 0.05);
+  --shadow-primary: 0 4px 12px -2px rgb(20 184 166 / 0.35);
+  --shadow-popover: 0 10px 15px -3px rgb(16 24 40 / 0.1), 0 4px 6px -4px rgb(16 24 40 / 0.1);
+
+  /* ---- Layout ----------------------------------------------------------- */
+  --container-page: 75rem; /* 1200px max content width; sidebar is w-60 (240px) */
+
+  /* ---- Motion ----------------------------------------------------------- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --default-transition-duration: 150ms;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background: var(--color-canvas);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 100%;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition-duration: 0ms !important;
+      animation-duration: 0ms !important;
+    }
+  }
 }
