@@ -45,18 +45,19 @@ export async function applyAiTheme(prompt: string): Promise<AiDesignResult> {
 
   // Rate limit per store: every request in the last hour counts, including
   // failed ones and ones later undone (store_ai_requests is append-only).
+  // Record first, then count (this request included): parallel requests each
+  // see the others' rows, so they cannot all slip under the limit.
+  const { error: logError } = await supabase.from("store_ai_requests").insert({ store_id: store.row.id });
+  if (logError) return { ok: false, error: "Could not start the AI designer. Try again." };
   const { count, error: countError } = await supabase
     .from("store_ai_requests")
     .select("id", { count: "exact", head: true })
     .eq("store_id", store.row.id)
     .gte("created_at", hourAgo());
   if (countError) return { ok: false, error: "Could not check your AI usage. Try again." };
-  if ((count ?? 0) >= MAX_AI_REQUESTS_PER_HOUR) {
+  if ((count ?? 0) > MAX_AI_REQUESTS_PER_HOUR) {
     return { ok: false, error: `You've used the AI designer ${MAX_AI_REQUESTS_PER_HOUR} times in the last hour. Try again later, or change the design by hand below.` };
   }
-
-  const { error: logError } = await supabase.from("store_ai_requests").insert({ store_id: store.row.id });
-  if (logError) return { ok: false, error: "Could not start the AI designer. Try again." };
 
   const current = store.draft;
   const result = await proposeTheme({ prompt, currentTheme: current.theme, storeName: current.content.storeName });

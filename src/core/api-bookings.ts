@@ -94,6 +94,9 @@ export async function createOnlineRepairTicket(storeKey: string, input: RepairBo
     const slot = findAvailableSlot(input.scheduledAt, { hours: shop.hours, timeZone: shop.timezone, now, taken });
     if (!slot) return { ok: false, error: "That time is no longer available. Pick another.", field: "slot" };
 
+    const limited = await overLimit("repair_tickets", shop.shopId, input.customer.email);
+    if (limited) return { ok: false, error: limited };
+
     const { data, error } = await admin
       .from("repair_tickets")
       .insert({
@@ -208,6 +211,26 @@ export type BuybackBooking = BuybackQuote & {
   customer: Customer;
 };
 
+// Abuse limits for the public forms. Every accepted submission emails the
+// customer address it was given, so without limits the form could be used to
+// send mail to strangers. Counted in the database, so they hold across
+// serverless instances.
+const PER_EMAIL_PER_DAY = 3;
+const PER_STORE_PER_HOUR = 30;
+
+async function overLimit(table: "repair_tickets" | "buybacks", shopId: string, email: string): Promise<string | null> {
+  const admin = createAdminClient();
+  const dayAgo = new Date(Date.now() - 24 * 3600_000).toISOString();
+  const hourAgo = new Date(Date.now() - 3600_000).toISOString();
+  const [byEmail, byStore] = await Promise.all([
+    admin.from(table).select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("source", "online").ilike("customer_email", email.replace(/[%_\\]/g, "\\$&")).gte("created_at", dayAgo),
+    admin.from(table).select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("source", "online").gte("created_at", hourAgo),
+  ]);
+  if ((byEmail.count ?? 0) >= PER_EMAIL_PER_DAY) return "You've already sent us a few requests today. Call the shop if you need another.";
+  if ((byStore.count ?? 0) >= PER_STORE_PER_HOUR) return "We're getting a lot of requests right now. Try again in a little while or call the shop.";
+  return null;
+}
+
 /** Recomputes the offer from the selections and records the accepted buyback. */
 export async function createOnlineBuyback(storeKey: string, input: BuybackBookingInput): Promise<BookingResult<BuybackBooking>> {
   const shop = await resolveShop(storeKey, "sell");
@@ -215,6 +238,9 @@ export async function createOnlineBuyback(storeKey: string, input: BuybackBookin
   try {
     const quote = await quoteFor(shop, input);
     if (!quote.ok) return quote;
+
+    const limited = await overLimit("buybacks", shop.shopId, input.customer.email);
+    if (limited) return { ok: false, error: limited };
 
     const { data, error } = await createAdminClient()
       .from("buybacks")

@@ -7,8 +7,6 @@ import {
   addErrorMessage,
   addProjectDomain,
   checkProjectDomain,
-  getDomainConfig,
-  mapDomainState,
   parseCustomDomain,
   removeProjectDomain,
   VercelApiError,
@@ -16,6 +14,7 @@ import {
   type DomainState,
   type DomainStatus,
 } from "@/lib/vercel/domains";
+import { hasOwnershipRecord, newOwnershipToken, ownershipRecord } from "@/lib/vercel/ownership";
 import { getOwnerStore, urlEnv } from "./store";
 
 // SELLIFY STORES: the owner's custom domain (one per store).
@@ -106,19 +105,18 @@ export async function addDomain(input: string): Promise<DomainResult> {
     return { ok: false, error: "This domain is already connected to another Sellify store.", field: "domain" };
   }
 
-  let project;
-  try {
-    project = await addProjectDomain(domain);
-  } catch (e) {
-    return { ok: false, error: addErrorMessage(e), field: e instanceof VercelApiError && e.code !== "not_configured" ? "domain" : undefined };
-  }
-  const config = await getDomainConfig(domain).catch(() => null);
-  const state = mapDomainState(project, config);
-
-  const { error } = await admin.from("store_domains").insert({ store_id: store.row.id, domain, ...stateColumns(state) });
+  // Step 1: ownership proof only. The domain is NOT attached to Vercel or
+  // routed until the TXT record is found (see checkDomain).
+  const token = newOwnershipToken();
+  const { error } = await admin.from("store_domains").insert({
+    store_id: store.row.id,
+    domain,
+    status: "pending",
+    verification: { records: [ownershipRecord(domain, token)], message: OWNERSHIP_MESSAGE, ownershipToken: token, onVercel: false } as unknown as Json,
+    last_error: null,
+    checked_at: new Date().toISOString(),
+  });
   if (error) {
-    // Roll back on Vercel so the domain is not left on the project without an owner.
-    await removeProjectDomain(domain).catch(() => undefined);
     return error.code === "23505"
       ? { ok: false, error: "This domain is already connected to another Sellify store.", field: "domain" }
       : { ok: false, error: "Could not connect the domain. Try again." };
@@ -126,11 +124,43 @@ export async function addDomain(input: string): Promise<DomainResult> {
   return { ok: true };
 }
 
+const OWNERSHIP_MESSAGE =
+  "First, prove you own this domain: add the TXT record below at your domain provider, then click Check status. After that we show the records that point the domain at your store.";
+
+function storedVerification(row: Tables<"store_domains">) {
+  const v = (row.verification ?? {}) as { ownershipToken?: unknown; onVercel?: unknown };
+  return { token: typeof v.ownershipToken === "string" ? v.ownershipToken : null, onVercel: v.onVercel === true };
+}
+
 export async function checkDomain(): Promise<DomainResult> {
   await requireShop();
   const store = await getOwnerStore();
   const current = await getStoreDomain();
   if (!store || !current) return { ok: false, error: "Connect a domain first." };
+
+  const admin = createAdminClient();
+  const { data: row } = await admin.from("store_domains").select("*").eq("id", current.id).eq("store_id", store.row.id).single();
+  if (!row) return { ok: false, error: "Connect a domain first." };
+  const { token, onVercel } = storedVerification(row);
+  if (!token) return { ok: false, error: "Remove this domain and connect it again." };
+
+  // Step 1: ownership. Until the TXT record is found nothing touches Vercel.
+  if (!onVercel) {
+    const owned = await hasOwnershipRecord(current.domain, token);
+    if (!owned) {
+      await admin
+        .from("store_domains")
+        .update({ checked_at: new Date().toISOString(), last_error: null })
+        .eq("id", current.id)
+        .eq("store_id", store.row.id);
+      return { ok: false, error: "We can't see the TXT record yet. DNS changes can take a while; try again later." };
+    }
+    try {
+      await addProjectDomain(current.domain);
+    } catch (e) {
+      return { ok: false, error: addErrorMessage(e) };
+    }
+  }
 
   let state: DomainState;
   try {
@@ -145,9 +175,14 @@ export async function checkDomain(): Promise<DomainResult> {
     return { ok: false, error: message };
   }
 
-  const { error } = await createAdminClient()
+  const cols = stateColumns(state);
+  const { error } = await admin
     .from("store_domains")
-    .update(stateColumns(state))
+    .update({
+      ...cols,
+      // Keep the proof so the ownership step is not repeated.
+      verification: { ...(cols.verification as object), ownershipToken: token, onVercel: true } as unknown as Json,
+    })
     .eq("id", current.id)
     .eq("store_id", store.row.id);
   return error ? { ok: false, error: "Could not save the status. Try again." } : { ok: true };
@@ -159,8 +194,10 @@ export async function removeDomain(): Promise<DomainResult> {
   const current = await getStoreDomain();
   if (!store || !current) return { ok: true };
 
+  const { data: row } = await createAdminClient().from("store_domains").select("*").eq("id", current.id).single();
+  const onVercel = row ? storedVerification(row).onVercel : false;
   try {
-    await removeProjectDomain(current.domain);
+    if (onVercel) await removeProjectDomain(current.domain);
   } catch (e) {
     if (!(e instanceof VercelApiError && e.code === "not_configured")) {
       return { ok: false, error: "Could not remove the domain. Try again." };
