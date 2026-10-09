@@ -22,8 +22,8 @@ export function BuybackStatusForm({ id, status, notes, statuses }: Props) {
         <HiddenField name="id" value={id} />
         <FormStack>
           {state.error ? <Notice tone="danger">{err.id ?? state.error}</Notice> : null}
-          <Field id="status" label="Status" required error={err.status}>
-            <Select id="status" name="status" required defaultValue={v?.status ?? status} invalid={!!err.status}>
+          <Field id="buyback-status" label="Status" required error={err.status}>
+            <Select id="buyback-status" name="status" required defaultValue={v?.status ?? status} invalid={!!err.status}>
               {statuses.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
@@ -31,8 +31,8 @@ export function BuybackStatusForm({ id, status, notes, statuses }: Props) {
               ))}
             </Select>
           </Field>
-          <Field id="notes" label="Notes" hint="Only your team sees these." error={err.notes}>
-            <Textarea id="notes" name="notes" maxLength={2000} defaultValue={v?.notes ?? notes ?? ""} invalid={!!err.notes} hasHint />
+          <Field id="buyback-notes" label="Notes" hint="Only your team sees these." error={err.notes}>
+            <Textarea id="buyback-notes" name="notes" maxLength={2000} defaultValue={v?.notes ?? notes ?? ""} invalid={!!err.notes} hasHint />
           </Field>
           <FormActions>
             <SubmitButton pendingText="Updating…">Update buyback</SubmitButton>

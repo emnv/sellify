@@ -5,6 +5,11 @@ import { expect, test, type Page } from "@playwright/test";
 // should match." This opens EVERY backend page and compares computed styles.
 
 const PAGES = [
+  "/store",
+  "/store/design",
+  "/store/content",
+  "/store/pages",
+  "/store/domain",
   "/core/inventory",
   "/core/inventory/new",
   "/core/pos",
@@ -56,6 +61,15 @@ test("every backend page uses identical pills, buttons, titles and spacing", asy
         return { pt: cs.paddingTop, pl: cs.paddingLeft, maxWidth: cs.maxWidth, gap: cs.rowGap };
       });
       seen.page.add(JSON.stringify(padding));
+
+      // Next keeps recently visited pages in the DOM (hidden), so ids must be
+      // unique app-wide or labels attach to the wrong (hidden) control.
+      const duplicates = await page.evaluate(() => {
+        const counts = new Map<string, number>();
+        document.querySelectorAll("[id]").forEach((el) => counts.set(el.id, (counts.get(el.id) ?? 0) + 1));
+        return [...counts].filter(([, n]) => n > 1).map(([id]) => id);
+      });
+      expect(duplicates, `duplicate ids after visiting ${path}`).toEqual([]);
     });
   }
 

@@ -35,12 +35,12 @@ export function AuthForm({ mode, action }: Props) {
       {state.message ? <Notice tone="success">{state.message}</Notice> : null}
 
       <FormStack>
-        <Field id="email" label="Email">
-          <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.email} />
+        <Field id={`${mode}-email`} label="Email">
+          <Input id={`${mode}-email`} name="email" type="email" autoComplete="email" required defaultValue={state.email} />
         </Field>
-        <Field id="password" label="Password" hint={isLogin ? undefined : "At least 8 characters."}>
+        <Field id={`${mode}-password`} label="Password" hint={isLogin ? undefined : "At least 8 characters."}>
           <Input
-            id="password"
+            id={`${mode}-password`}
             name="password"
             type="password"
             autoComplete={isLogin ? "current-password" : "new-password"}

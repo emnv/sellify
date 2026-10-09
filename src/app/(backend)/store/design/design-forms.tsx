@@ -63,8 +63,8 @@ export function DesignForm({ theme, options }: { theme: StoreTheme; options: Opt
         <Card title="Colours" description="Button text switches between black and white automatically so it stays readable.">
           <FormRow cols={3}>
             {COLOR_FIELDS.map((c) => (
-              <Field key={c.key} id={`colors.${c.key}`} label={c.label} hint={c.hint || undefined} error={err[`colors.${c.key}`]}>
-                <ColorInput id={`colors.${c.key}`} name={`colors.${c.key}`} defaultValue={theme.colors[c.key]} invalid={!!err[`colors.${c.key}`]} />
+              <Field key={c.key} id={`design-colors.${c.key}`} label={c.label} hint={c.hint || undefined} error={err[`colors.${c.key}`]}>
+                <ColorInput id={`design-colors.${c.key}`} name={`colors.${c.key}`} defaultValue={theme.colors[c.key]} invalid={!!err[`colors.${c.key}`]} />
               </Field>
             ))}
           </FormRow>
@@ -73,8 +73,8 @@ export function DesignForm({ theme, options }: { theme: StoreTheme; options: Opt
         <Card title="Fonts and shapes">
           <FormStack>
             <FormRow>
-              <Field id="fonts.heading" label="Heading font">
-                <Select id="fonts.heading" name="fonts.heading" defaultValue={theme.fonts.heading}>
+              <Field id="design-fonts.heading" label="Heading font">
+                <Select id="design-fonts.heading" name="fonts.heading" defaultValue={theme.fonts.heading}>
                   {options.fonts.map((f) => (
                     <option key={f.value} value={f.value}>
                       {f.label}
@@ -82,8 +82,8 @@ export function DesignForm({ theme, options }: { theme: StoreTheme; options: Opt
                   ))}
                 </Select>
               </Field>
-              <Field id="fonts.body" label="Body font">
-                <Select id="fonts.body" name="fonts.body" defaultValue={theme.fonts.body}>
+              <Field id="design-fonts.body" label="Body font">
+                <Select id="design-fonts.body" name="fonts.body" defaultValue={theme.fonts.body}>
                   {options.fonts.map((f) => (
                     <option key={f.value} value={f.value}>
                       {f.label}
@@ -93,8 +93,8 @@ export function DesignForm({ theme, options }: { theme: StoreTheme; options: Opt
               </Field>
             </FormRow>
             <FormRow>
-              <Field id="radius" label="Corners">
-                <Select id="radius" name="radius" defaultValue={theme.radius}>
+              <Field id="design-radius" label="Corners">
+                <Select id="design-radius" name="radius" defaultValue={theme.radius}>
                   {options.radii.map((r) => (
                     <option key={r} value={r}>
                       {RADIUS_LABELS[r] ?? r}
@@ -102,8 +102,8 @@ export function DesignForm({ theme, options }: { theme: StoreTheme; options: Opt
                   ))}
                 </Select>
               </Field>
-              <Field id="buttonSize" label="Button size">
-                <Select id="buttonSize" name="buttonSize" defaultValue={theme.buttonSize}>
+              <Field id="design-buttonSize" label="Button size">
+                <Select id="design-buttonSize" name="buttonSize" defaultValue={theme.buttonSize}>
                   {options.buttonSizes.map((b) => (
                     <option key={b} value={b}>
                       {b[0].toUpperCase() + b.slice(1)}
@@ -113,8 +113,8 @@ export function DesignForm({ theme, options }: { theme: StoreTheme; options: Opt
               </Field>
             </FormRow>
             <FormRow>
-              <Field id="heroStyle" label="Top of the homepage">
-                <Select id="heroStyle" name="heroStyle" defaultValue={theme.heroStyle}>
+              <Field id="design-heroStyle" label="Top of the homepage">
+                <Select id="design-heroStyle" name="heroStyle" defaultValue={theme.heroStyle}>
                   {options.heroStyles.map((h) => (
                     <option key={h} value={h}>
                       {HERO_LABELS[h] ?? h}
@@ -122,8 +122,8 @@ export function DesignForm({ theme, options }: { theme: StoreTheme; options: Opt
                   ))}
                 </Select>
               </Field>
-              <Field id="productColumns" label="Products per row (desktop)">
-                <Select id="productColumns" name="productColumns" defaultValue={String(theme.productColumns)}>
+              <Field id="design-productColumns" label="Products per row (desktop)">
+                <Select id="design-productColumns" name="productColumns" defaultValue={String(theme.productColumns)}>
                   {[2, 3, 4].map((n) => (
                     <option key={n} value={n}>
                       {n}

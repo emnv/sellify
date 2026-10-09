@@ -19,28 +19,28 @@ export function ShopForm({ shop }: Props) {
         <FormStack>
           {state.saved ? <Notice tone="success">Settings saved.</Notice> : null}
           {state.error ? <Notice tone="danger">{state.error}</Notice> : null}
-          <Field id="name" label="Shop name" required error={err.name}>
-            <Input id="name" name="name" required maxLength={80} defaultValue={v?.name ?? shop.name} invalid={!!err.name} />
+          <Field id="settings-name" label="Shop name" required error={err.name}>
+            <Input id="settings-name" name="name" required maxLength={80} defaultValue={v?.name ?? shop.name} invalid={!!err.name} />
           </Field>
           <FormRow>
-            <Field id="email" label="Email" error={err.email}>
-              <Input id="email" name="email" type="email" maxLength={254} autoComplete="email" defaultValue={v?.email ?? shop.email ?? ""} invalid={!!err.email} />
+            <Field id="settings-email" label="Email" error={err.email}>
+              <Input id="settings-email" name="email" type="email" maxLength={254} autoComplete="email" defaultValue={v?.email ?? shop.email ?? ""} invalid={!!err.email} />
             </Field>
-            <Field id="phone" label="Phone" error={err.phone}>
-              <Input id="phone" name="phone" type="tel" maxLength={40} autoComplete="tel" defaultValue={v?.phone ?? shop.phone ?? ""} invalid={!!err.phone} />
+            <Field id="settings-phone" label="Phone" error={err.phone}>
+              <Input id="settings-phone" name="phone" type="tel" maxLength={40} autoComplete="tel" defaultValue={v?.phone ?? shop.phone ?? ""} invalid={!!err.phone} />
             </Field>
           </FormRow>
-          <Field id="address" label="Address" error={err.address}>
-            <Textarea id="address" name="address" rows={3} maxLength={300} defaultValue={v?.address ?? shop.address ?? ""} invalid={!!err.address} />
+          <Field id="settings-address" label="Address" error={err.address}>
+            <Textarea id="settings-address" name="address" rows={3} maxLength={300} defaultValue={v?.address ?? shop.address ?? ""} invalid={!!err.address} />
           </Field>
           <Field
-            id="notification_email"
+            id="settings-notification_email"
             label="Notification email"
             hint="Booking, buyback and order emails go here. Leave it empty to use the shop email."
             error={err.notification_email}
           >
             <Input
-              id="notification_email"
+              id="settings-notification_email"
               name="notification_email"
               type="email"
               maxLength={254}

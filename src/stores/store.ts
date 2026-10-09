@@ -37,7 +37,8 @@ export const getOwnerStore = cache(async (): Promise<OwnerStore | null> => {
   if (!row) return null;
 
   const { data: domains } = await supabase.from("store_domains").select("domain, status").eq("store_id", row.id);
-  const active = domains?.find((d) => d.status === "active" || d.status === "verified")?.domain ?? null;
+  // Only an "active" domain (DNS correct, HTTPS issued) becomes the live link.
+  const active = domains?.find((d) => d.status === "active")?.domain ?? null;
 
   const draft = parseStoreConfig(row.draft_config, shop.name);
   const published = row.published_config ? parseStoreConfig(row.published_config, shop.name) : null;

@@ -14,13 +14,13 @@ export default async function globalSetup(config: FullConfig) {
   const browser = await chromium.launch();
   const page = await browser.newPage();
   await page.goto(`${baseURL}/login`);
-  await page.locator("#email").fill(E2E_EMAIL);
-  await page.locator("#password").fill(E2E_PASSWORD);
+  await page.getByRole("textbox", { name: "Email" }).fill(E2E_EMAIL);
+  await page.getByRole("textbox", { name: "Password" }).fill(E2E_PASSWORD);
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL("**/onboarding");
   await page.getByRole("textbox", { name: /Shop name/ }).fill("E2E Test Shop");
   await page.getByRole("button", { name: "Create shop" }).click();
-  await page.waitForURL("**/core/inventory");
+  await page.waitForURL("**/store");
 
   mkdirSync("e2e/.auth", { recursive: true });
   await page.context().storageState({ path: "e2e/.auth/state.json" });

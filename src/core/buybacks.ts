@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import type { Tone } from "@/components/ui";
 import type { Catalog } from "@/core/catalog";
+import type { BuybackAnswers } from "@/lib/buyback/quote";
 import { parseMoneyToCents } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 import type { Json, Tables } from "@/lib/supabase/database.types";
@@ -42,8 +43,9 @@ export function handoverLabel(value: string) {
 // Condition answers and offers
 // ---------------------------------------------------------------------------
 
-/** What the customer told us. `null` = not answered. */
-export type BuybackAnswers = { screenCracked: boolean | null; batteryOk: boolean | null; turnsOn: boolean | null };
+// The offer formula lives in @/lib/buyback/quote (pure, unit-tested, shared
+// with the store's Sell tab). Re-exported here for existing imports.
+export { computeOffer, type BuybackAnswers } from "@/lib/buyback/quote";
 
 export function readAnswers(answers: Json): BuybackAnswers {
   const obj = answers && typeof answers === "object" && !Array.isArray(answers) ? answers : {};
@@ -63,15 +65,6 @@ export function conditionSummary(answers: Json): string {
 }
 
 type Deductions = Pick<BuybackSettings, "screen_cracked_pct" | "battery_bad_pct" | "no_power_pct">;
-
-/** Base price minus the percentage for each reported problem (never below zero). */
-export function computeOffer(baseCents: number, answers: BuybackAnswers, d: Deductions): number {
-  let pct = 0;
-  if (answers.screenCracked) pct += d.screen_cracked_pct;
-  if (answers.batteryOk === false) pct += d.battery_bad_pct;
-  if (answers.turnsOn === false) pct += d.no_power_pct;
-  return Math.max(0, Math.round((baseCents * (100 - Math.min(pct, 100))) / 100));
-}
 
 // ---------------------------------------------------------------------------
 // Settings (condition deductions)

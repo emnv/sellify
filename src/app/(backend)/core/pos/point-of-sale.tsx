@@ -201,9 +201,9 @@ export function PointOfSale({ products, currency }: Props) {
           </div>
 
           <FormStack>
-            <Field id="customer_name" label="Customer name" hint="Optional. Shown on the sale.">
+            <Field id="pos-customer_name" label="Customer name" hint="Optional. Shown on the sale.">
               <Input
-                id="customer_name"
+                id="pos-customer_name"
                 name="customer_name"
                 maxLength={120}
                 autoComplete="off"

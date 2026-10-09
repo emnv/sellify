@@ -85,8 +85,17 @@
   /* ---- Layout ----------------------------------------------------------- */
   --container-page: 75rem; /* 1200px max content width; sidebar is w-60 (240px) */
 
-  /* ---- Public store theme (NOT the Sellify brand) ------------------------ */
-  /* Set per store at runtime by <StoreFrame> from the store's theme config.  */
+  /* ---- Motion ----------------------------------------------------------- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --default-transition-duration: 150ms;
+}
+
+/*
+ * Public store theme (NOT the Sellify brand). `inline` puts var(--store-*) straight
+ * into each utility, so the values set per store by <StoreFrame> resolve on the
+ * store's own elements instead of on :root (where they do not exist).
+ */
+@theme inline {
   --color-store-bg: var(--store-bg);
   --color-store-surface: var(--store-surface);
   --color-store-text: var(--store-text);
@@ -119,9 +128,6 @@
   --text-store-5xl--line-height: 1.1;
   --radius-store-card: var(--store-radius-card);
 
-  /* ---- Motion ----------------------------------------------------------- */
-  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --default-transition-duration: 150ms;
 }
 
 @layer base {

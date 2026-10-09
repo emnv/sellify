@@ -13,9 +13,9 @@ export function PagesForm({ tabs }: { tabs: StoreContent["tabs"] }) {
         <FormStack>
           {state.saved ? <Notice tone="success">Saved to your draft. Publish to make it live.</Notice> : null}
           {state.error ? <Notice tone="danger">{state.error}</Notice> : null}
-          <Switch id="tabs.shop" name="tabs.shop" label="Shop" description="Products from your inventory, with basket and checkout." defaultChecked={tabs.shop} />
-          <Switch id="tabs.repair" name="tabs.repair" label="Repair" description="Repair prices and online booking." defaultChecked={tabs.repair} />
-          <Switch id="tabs.sell" name="tabs.sell" label="Sell" description="Instant buyback quotes for customers' old phones." defaultChecked={tabs.sell} />
+          <Switch id="pages-tabs.shop" name="tabs.shop" label="Shop" description="Products from your inventory, with basket and checkout." defaultChecked={tabs.shop} />
+          <Switch id="pages-tabs.repair" name="tabs.repair" label="Repair" description="Repair prices and online booking." defaultChecked={tabs.repair} />
+          <Switch id="pages-tabs.sell" name="tabs.sell" label="Sell" description="Instant buyback quotes for customers' old phones." defaultChecked={tabs.sell} />
           <FormActions>
             <Button type="submit" loading={pending}>
               Save tabs

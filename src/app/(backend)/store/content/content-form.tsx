@@ -34,9 +34,9 @@ export function ContentForm({ shopId, content, days }: { shopId: string; content
 
         <Card title="Banner" description="A strip across the top of every page, for offers and news.">
           <FormStack>
-            <Switch id="banner.enabled" name="banner.enabled" label="Show the banner" defaultChecked={content.banner.enabled} />
-            <Field id="banner.text" label="Banner text" error={err["banner.text"]}>
-              <Input id="banner.text" name="banner.text" maxLength={160} defaultValue={content.banner.text} placeholder="10% off screen repairs this week" />
+            <Switch id="content-banner.enabled" name="banner.enabled" label="Show the banner" defaultChecked={content.banner.enabled} />
+            <Field id="content-banner.text" label="Banner text" error={err["banner.text"]}>
+              <Input id="content-banner.text" name="banner.text" maxLength={160} defaultValue={content.banner.text} placeholder="10% off screen repairs this week" />
             </Field>
           </FormStack>
         </Card>
@@ -44,8 +44,8 @@ export function ContentForm({ shopId, content, days }: { shopId: string; content
         <Card title="Homepage">
           <FormStack>
             <ImageUploader shopId={shopId} folder="store" name="heroImageUrl" label="Main photo" max={1} defaultValue={content.heroImageUrl ? [content.heroImageUrl] : []} />
-            <Field id="about" label="About your shop" hint="A few sentences about who you are and what you do." error={err.about}>
-              <Textarea id="about" name="about" rows={5} maxLength={2000} defaultValue={content.about} hasHint />
+            <Field id="content-about" label="About your shop" hint="A few sentences about who you are and what you do." error={err.about}>
+              <Textarea id="content-about" name="about" rows={5} maxLength={2000} defaultValue={content.about} hasHint />
             </Field>
           </FormStack>
         </Card>
@@ -53,15 +53,15 @@ export function ContentForm({ shopId, content, days }: { shopId: string; content
         <Card title="Contact details" description="Shown in the footer and on the Visit us section. Your address also places the map.">
           <FormStack>
             <FormRow>
-              <Field id="contact.phone" label="Phone" error={err["contact.phone"]}>
-                <Input id="contact.phone" name="contact.phone" type="tel" maxLength={40} defaultValue={content.contact.phone} />
+              <Field id="content-contact.phone" label="Phone" error={err["contact.phone"]}>
+                <Input id="content-contact.phone" name="contact.phone" type="tel" maxLength={40} defaultValue={content.contact.phone} />
               </Field>
-              <Field id="contact.email" label="Email" error={err["contact.email"]}>
-                <Input id="contact.email" name="contact.email" type="email" maxLength={254} defaultValue={content.contact.email} invalid={!!err["contact.email"]} />
+              <Field id="content-contact.email" label="Email" error={err["contact.email"]}>
+                <Input id="content-contact.email" name="contact.email" type="email" maxLength={254} defaultValue={content.contact.email} invalid={!!err["contact.email"]} />
               </Field>
             </FormRow>
-            <Field id="contact.address" label="Address" error={err["contact.address"]}>
-              <Textarea id="contact.address" name="contact.address" rows={3} maxLength={300} defaultValue={content.contact.address} />
+            <Field id="content-contact.address" label="Address" error={err["contact.address"]}>
+              <Textarea id="content-contact.address" name="contact.address" rows={3} maxLength={300} defaultValue={content.contact.address} />
             </Field>
           </FormStack>
         </Card>
@@ -74,12 +74,12 @@ export function ContentForm({ shopId, content, days }: { shopId: string; content
               return (
                 <div key={d.key} className="grid grid-cols-1 items-center gap-3 py-3 sm:grid-cols-4">
                   <span className="text-body font-medium text-fg">{d.label}</span>
-                  <Checkbox id={`hours.${d.key}.closed`} name={`hours.${d.key}.closed`} label="Closed" defaultChecked={h.closed} />
-                  <Field id={`hours.${d.key}.open`} label={`${d.label} opens`} hideLabel error={e}>
-                    <Input id={`hours.${d.key}.open`} name={`hours.${d.key}.open`} type="time" defaultValue={h.open} invalid={!!e} />
+                  <Checkbox id={`content-hours.${d.key}.closed`} name={`hours.${d.key}.closed`} label="Closed" defaultChecked={h.closed} />
+                  <Field id={`content-hours.${d.key}.open`} label={`${d.label} opens`} hideLabel error={e}>
+                    <Input id={`content-hours.${d.key}.open`} name={`hours.${d.key}.open`} type="time" defaultValue={h.open} invalid={!!e} />
                   </Field>
-                  <Field id={`hours.${d.key}.close`} label={`${d.label} closes`} hideLabel>
-                    <Input id={`hours.${d.key}.close`} name={`hours.${d.key}.close`} type="time" defaultValue={h.close} invalid={!!e} />
+                  <Field id={`content-hours.${d.key}.close`} label={`${d.label} closes`} hideLabel>
+                    <Input id={`content-hours.${d.key}.close`} name={`hours.${d.key}.close`} type="time" defaultValue={h.close} invalid={!!e} />
                   </Field>
                 </div>
               );
@@ -103,11 +103,11 @@ export function ContentForm({ shopId, content, days }: { shopId: string; content
             {reviews.map((r, i) => (
               <div key={r.id} className="flex flex-col gap-3 border-b border-border pb-6 last:border-0 last:pb-0">
                 <FormRow cols={3}>
-                  <Field id={`reviews.${i}.author`} label="Name" error={err[`reviews.${i}.author`]}>
-                    <Input id={`reviews.${i}.author`} name="reviews.author" maxLength={60} defaultValue={r.author} />
+                  <Field id={`content-reviews.${i}.author`} label="Name" error={err[`reviews.${i}.author`]}>
+                    <Input id={`content-reviews.${i}.author`} name="reviews.author" maxLength={60} defaultValue={r.author} />
                   </Field>
-                  <Field id={`reviews.${i}.rating`} label="Stars">
-                    <Select id={`reviews.${i}.rating`} name="reviews.rating" defaultValue={String(r.rating)}>
+                  <Field id={`content-reviews.${i}.rating`} label="Stars">
+                    <Select id={`content-reviews.${i}.rating`} name="reviews.rating" defaultValue={String(r.rating)}>
                       {[5, 4, 3, 2, 1].map((n) => (
                         <option key={n} value={n}>
                           {n} {n === 1 ? "star" : "stars"}
@@ -121,8 +121,8 @@ export function ContentForm({ shopId, content, days }: { shopId: string; content
                     </Button>
                   </div>
                 </FormRow>
-                <Field id={`reviews.${i}.text`} label="Review" error={err[`reviews.${i}.text`]}>
-                  <Textarea id={`reviews.${i}.text`} name="reviews.text" rows={2} maxLength={400} defaultValue={r.text} />
+                <Field id={`content-reviews.${i}.text`} label="Review" error={err[`reviews.${i}.text`]}>
+                  <Textarea id={`content-reviews.${i}.text`} name="reviews.text" rows={2} maxLength={400} defaultValue={r.text} />
                 </Field>
               </div>
             ))}

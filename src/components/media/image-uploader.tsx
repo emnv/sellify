@@ -85,7 +85,7 @@ export function ImageUploader({ shopId, folder, name, label, defaultValue = [], 
       {urls.length < max ? (
         <div>
           <label htmlFor={inputId} className={buttonClasses("secondary", "sm")} aria-disabled={busy || undefined}>
-            {busy ? "Uploading…" : urls.length ? "Add more photos" : "Upload photos"}
+            {busy ? "Uploading…" : max === 1 ? "Upload image" : urls.length ? "Add more photos" : "Upload photos"}
           </label>
           <input
             ref={inputRef}

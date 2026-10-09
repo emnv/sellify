@@ -30,9 +30,9 @@ export function DeductionsForm({ defaults }: Props) {
           {state.error ? <Notice tone="danger">{state.error}</Notice> : null}
           <FormRow cols={3}>
             {FIELDS.map((f) => (
-              <Field key={f.name} id={f.name} label={f.label} required error={err[f.name]}>
+              <Field key={f.name} id={`bbded-${f.name}`} label={f.label} required error={err[f.name]}>
                 <Input
-                  id={f.name}
+                  id={`bbded-${f.name}`}
                   name={f.name}
                   type="number"
                   inputMode="numeric"

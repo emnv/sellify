@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui";
+import { Button, Skeleton } from "@/components/ui";
+import { signOut } from "../actions";
 import { getCurrentShop } from "@/core/shop";
 import { requireUser } from "@/lib/auth";
 import { OnboardingForm } from "./onboarding-form";
@@ -19,5 +20,14 @@ export default function OnboardingPage() {
 async function Onboarding() {
   const user = await requireUser();
   if (await getCurrentShop()) redirect("/");
-  return <OnboardingForm defaultEmail={user.email} />;
+  return (
+    <div className="flex flex-col gap-6">
+      <OnboardingForm defaultEmail={user.email} />
+      <form action={signOut} className="flex justify-center border-t border-border pt-4">
+        <Button type="submit" variant="ghost" size="sm">
+          Log out of {user.email}
+        </Button>
+      </form>
+    </div>
+  );
 }

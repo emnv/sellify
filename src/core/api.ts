@@ -105,7 +105,7 @@ export async function getBuybackOptions(key: string): Promise<{ prices: BuybackO
   if (error) throw new Error(`Could not load buyback prices: ${error.message}`);
   if (!data) return null;
   const d = data as { prices: BuybackOption[]; deductions: BuybackDeductions | null };
-  return { prices: d.prices, deductions: d.deductions ?? { screen_cracked_pct: 0, battery_bad_pct: 0, no_power_pct: 0 } };
+  return { prices: d.prices, deductions: d.deductions ?? { screen_cracked_pct: 30, battery_bad_pct: 15, no_power_pct: 50 } };
 }
 
 // ---------------------------------------------------------------------------

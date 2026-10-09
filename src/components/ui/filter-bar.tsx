@@ -32,13 +32,15 @@ type SearchProps = {
 
 /** GET search box. Keeps the other active filters. */
 export function FilterSearch({ basePath, params, placeholder, name = "q" }: SearchProps) {
+  // Unique per list page: Next keeps recently visited pages in the DOM.
+  const id = `filter${basePath.replace(/[^a-z0-9]+/gi, "-")}-${name}`;
   return (
     <form action={basePath} method="get" role="search" className="w-full lg:w-72">
       {Object.entries(params).map(([k, v]) => (v && k !== name && k !== "page" ? <HiddenField key={k} name={k} value={v} /> : null))}
-      <label htmlFor={`filter-${name}`} className="sr-only">
+      <label htmlFor={id} className="sr-only">
         {placeholder}
       </label>
-      <Input id={`filter-${name}`} name={name} type="search" placeholder={placeholder} defaultValue={params[name] ?? ""} />
+      <Input id={id} name={name} type="search" placeholder={placeholder} defaultValue={params[name] ?? ""} />
     </form>
   );
 }

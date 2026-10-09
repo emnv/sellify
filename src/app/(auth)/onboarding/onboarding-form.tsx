@@ -15,11 +15,11 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail: string }) {
       </div>
       {state.error ? <Notice tone="danger">{state.error}</Notice> : null}
       <FormStack>
-        <Field id="name" label="Shop name" required>
-          <Input id="name" name="name" required maxLength={80} defaultValue={state.name} placeholder="FixIt Galway" />
+        <Field id="shop-name" label="Shop name" required>
+          <Input id="shop-name" name="name" required maxLength={80} defaultValue={state.name} placeholder="FixIt Galway" />
         </Field>
-        <Field id="email" label="Shop email" hint="Booking, buyback and order emails go here.">
-          <Input id="email" name="email" type="email" defaultValue={state.email ?? defaultEmail} hasHint />
+        <Field id="shop-email" label="Shop email" hint="Booking, buyback and order emails go here.">
+          <Input id="shop-email" name="email" type="email" defaultValue={state.email ?? defaultEmail} hasHint />
         </Field>
       </FormStack>
       <Button type="submit" fullWidth loading={pending}>

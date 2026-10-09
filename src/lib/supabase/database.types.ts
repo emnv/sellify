@@ -616,6 +616,38 @@ export type Database = {
         }
         Relationships: []
       }
+      store_ai_requests: {
+        Row: {
+          created_at: string
+          id: number
+          input_tokens: number | null
+          output_tokens: number | null
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          input_tokens?: number | null
+          output_tokens?: number | null
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          input_tokens?: number | null
+          output_tokens?: number | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_ai_requests_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_design_history: {
         Row: {
           created_at: string

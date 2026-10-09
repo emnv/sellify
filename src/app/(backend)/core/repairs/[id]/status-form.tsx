@@ -23,8 +23,8 @@ export function StatusForm({ id, status, notes, statuses }: Props) {
         <HiddenField name="id" value={id} />
         <FormStack>
           {state.error ? <Notice tone="danger">{state.error}</Notice> : null}
-          <Field id="status" label="Status" required error={err.status}>
-            <Select id="status" name="status" defaultValue={v?.status ?? status} invalid={!!err.status}>
+          <Field id="ticket-status" label="Status" required error={err.status}>
+            <Select id="ticket-status" name="status" defaultValue={v?.status ?? status} invalid={!!err.status}>
               {statuses.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
@@ -32,8 +32,8 @@ export function StatusForm({ id, status, notes, statuses }: Props) {
               ))}
             </Select>
           </Field>
-          <Field id="notes" label="Notes" hint="Only your staff see these." error={err.notes}>
-            <Textarea id="notes" name="notes" maxLength={2000} defaultValue={v?.notes ?? notes ?? ""} invalid={!!err.notes} hasHint />
+          <Field id="ticket-notes" label="Notes" hint="Only your staff see these." error={err.notes}>
+            <Textarea id="ticket-notes" name="notes" maxLength={2000} defaultValue={v?.notes ?? notes ?? ""} invalid={!!err.notes} hasHint />
           </Field>
           <FormActions>
             <SubmitButton pendingText="Updating…">Update ticket</SubmitButton>

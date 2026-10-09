@@ -111,7 +111,7 @@ export async function storeRepairOptions(ctx: StoreCtx): Promise<RepairOption[]>
 }
 
 export async function storeBuybackOptions(ctx: StoreCtx): Promise<{ prices: BuybackOption[]; deductions: BuybackDeductions }> {
-  if (!ctx.preview) return (await getBuybackOptions(ctx.storeKey)) ?? { prices: [], deductions: { screen_cracked_pct: 0, battery_bad_pct: 0, no_power_pct: 0 } };
+  if (!ctx.preview) return (await getBuybackOptions(ctx.storeKey)) ?? { prices: [], deductions: { screen_cracked_pct: 30, battery_bad_pct: 15, no_power_pct: 50 } };
   const { shop } = await requireShop();
   const supabase = await createClient();
   const [{ data: prices }, { data: settings }, catalog] = await Promise.all([
@@ -124,5 +124,5 @@ export async function storeBuybackOptions(ctx: StoreCtx): Promise<{ prices: Buyb
     for (const m of b.models)
       for (const p of (prices ?? []).filter((x) => x.model_id === m.id).sort((a, z) => a.storage_gb - z.storage_gb))
         out.push({ brand_id: b.id, brand: b.name, model_id: m.id, model: m.name, storage_gb: p.storage_gb, base_price_cents: p.base_price_cents });
-  return { prices: out, deductions: settings ?? { screen_cracked_pct: 0, battery_bad_pct: 0, no_power_pct: 0 } };
+  return { prices: out, deductions: settings ?? { screen_cracked_pct: 30, battery_bad_pct: 15, no_power_pct: 50 } };
 }

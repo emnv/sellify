@@ -20,8 +20,8 @@ export function RepairPriceForm({ brands, repairTypes }: Props) {
           {state.error ? <Notice tone="danger">{state.error}</Notice> : null}
           {state.saved ? <Notice tone="success">{state.saved}</Notice> : null}
           <FormRow>
-            <Field id="model_id" label="Model" required error={err.model_id}>
-              <Select id="model_id" name="model_id" required defaultValue={v?.model_id ?? ""} placeholder="Choose a model" invalid={!!err.model_id}>
+            <Field id="rprice-model_id" label="Model" required error={err.model_id}>
+              <Select id="rprice-model_id" name="model_id" required defaultValue={v?.model_id ?? ""} placeholder="Choose a model" invalid={!!err.model_id}>
                 {brands.map((b) => (
                   <optgroup key={b.id} label={b.name}>
                     {b.models.map((m) => (
@@ -33,8 +33,8 @@ export function RepairPriceForm({ brands, repairTypes }: Props) {
                 ))}
               </Select>
             </Field>
-            <Field id="repair_type_id" label="Repair" required error={err.repair_type_id}>
-              <Select id="repair_type_id" name="repair_type_id" required defaultValue={v?.repair_type_id ?? ""} placeholder="Choose a repair" invalid={!!err.repair_type_id}>
+            <Field id="rprice-repair_type_id" label="Repair" required error={err.repair_type_id}>
+              <Select id="rprice-repair_type_id" name="repair_type_id" required defaultValue={v?.repair_type_id ?? ""} placeholder="Choose a repair" invalid={!!err.repair_type_id}>
                 {repairTypes.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}
@@ -44,11 +44,11 @@ export function RepairPriceForm({ brands, repairTypes }: Props) {
             </Field>
           </FormRow>
           <FormRow>
-            <Field id="price" label="Price" required error={err.price}>
-              <Input id="price" name="price" inputMode="decimal" prefix="€" required defaultValue={v?.price ?? ""} invalid={!!err.price} placeholder="0.00" />
+            <Field id="rprice-price" label="Price" required error={err.price}>
+              <Input id="rprice-price" name="price" inputMode="decimal" prefix="€" required defaultValue={v?.price ?? ""} invalid={!!err.price} placeholder="0.00" />
             </Field>
-            <Field id="duration" label="Time needed (minutes)" hint="From 15 to 480 minutes." error={err.duration}>
-              <Input id="duration" name="duration" type="number" min={15} max={480} step={5} required defaultValue={v?.duration ?? "60"} invalid={!!err.duration} hasHint />
+            <Field id="rprice-duration" label="Time needed (minutes)" hint="From 15 to 480 minutes." error={err.duration}>
+              <Input id="rprice-duration" name="duration" type="number" min={15} max={480} step={5} required defaultValue={v?.duration ?? "60"} invalid={!!err.duration} hasHint />
             </Field>
           </FormRow>
           <FormActions>

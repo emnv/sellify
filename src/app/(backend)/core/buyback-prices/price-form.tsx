@@ -43,9 +43,9 @@ function PriceFields({ brands, state }: Props & { state: BuybackPriceFormState }
 
   return (
     <FormRow>
-      <Field id="model_id" label="Model" required error={err.model_id}>
+      <Field id="bbprice-model_id" label="Model" required error={err.model_id}>
         <Select
-          id="model_id"
+          id="bbprice-model_id"
           name="model_id"
           required
           defaultValue={modelId}
@@ -64,10 +64,10 @@ function PriceFields({ brands, state }: Props & { state: BuybackPriceFormState }
           ))}
         </Select>
       </Field>
-      <Field id="storage_gb" label="Storage" required error={err.storage_gb}>
+      <Field id="bbprice-storage_gb" label="Storage" required error={err.storage_gb}>
         <Select
           key={modelId}
-          id="storage_gb"
+          id="bbprice-storage_gb"
           name="storage_gb"
           required
           disabled={!model}
@@ -82,9 +82,9 @@ function PriceFields({ brands, state }: Props & { state: BuybackPriceFormState }
           ))}
         </Select>
       </Field>
-      <Field id="base_price" label="Base price" required hint="What you pay for one in perfect condition." error={err.base_price}>
+      <Field id="bbprice-base_price" label="Base price" required hint="What you pay for one in perfect condition." error={err.base_price}>
         <Input
-          id="base_price"
+          id="bbprice-base_price"
           name="base_price"
           inputMode="decimal"
           prefix="€"
