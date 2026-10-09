@@ -12,6 +12,9 @@ type Props = {
   pendingText?: string;
   name?: string;
   value?: string;
+  disabled?: boolean;
+  /** Accessible name when the visible text is short, e.g. "Remove" in a table row. */
+  "aria-label"?: string;
 };
 
 /** Submit button that shows a spinner while its parent <form> action runs. */

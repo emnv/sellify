@@ -57,24 +57,27 @@ function describedBy(id: string | undefined, { invalid, hasHint }: ControlExtras
 type InputProps = Omit<ComponentProps<"input">, "className" | "style" | "size"> & ControlExtras & {
   /** Text shown inside the field before the value, e.g. "€". */
   prefix?: string;
+  /** Text shown inside the field after the value, e.g. "%" or "min". */
+  suffix?: string;
 };
 
-export function Input({ invalid, hasHint, prefix, ...props }: InputProps) {
+export function Input({ invalid, hasHint, prefix, suffix, ...props }: InputProps) {
   const input = (
     <input
       {...props}
       aria-invalid={invalid || undefined}
       aria-describedby={describedBy(props.id, { invalid, hasHint })}
-      className={cx(control, "h-10", invalid ? "border-danger" : "border-border-strong", prefix && "pl-8")}
+      data-ui="input"
+      className={cx(control, "h-10", invalid ? "border-danger" : "border-border-strong", prefix && "pl-8", suffix && "pr-12")}
     />
   );
-  if (!prefix) return input;
+  if (!prefix && !suffix) return input;
+  const affix = "pointer-events-none absolute inset-y-0 flex items-center text-body text-fg-subtle";
   return (
     <div className="relative">
-      <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-body text-fg-subtle">
-        {prefix}
-      </span>
+      {prefix ? <span aria-hidden="true" className={cx(affix, "left-3")}>{prefix}</span> : null}
       {input}
+      {suffix ? <span aria-hidden="true" className={cx(affix, "right-3")}>{suffix}</span> : null}
     </div>
   );
 }
@@ -176,9 +179,9 @@ export function FormStack({ children }: { children: ReactNode }) {
   return <div className="flex flex-col gap-4">{children}</div>;
 }
 
-/** Two fields side by side from tablet width up. */
-export function FormRow({ children }: { children: ReactNode }) {
-  return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{children}</div>;
+/** Two (or three) short fields side by side from tablet width up. */
+export function FormRow({ cols = 2, children }: { cols?: 2 | 3; children: ReactNode }) {
+  return <div className={cx("grid grid-cols-1 gap-4", cols === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3")}>{children}</div>;
 }
 
 /** Bottom row of a form: actions aligned right. */

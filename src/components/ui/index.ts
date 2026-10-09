@@ -2,6 +2,7 @@
 // Rules: docs/brand/sellify-platform.md · AI rules: CLAUDE.md
 export { AppShell, type NavGroup, type NavItem } from "./app-shell";
 export { Pill, StatusBadge, Tag, type Tone } from "./badge";
+export { ChoiceGroup } from "./choice-group";
 export { Button, buttonClasses, type ButtonSize, type ButtonVariant } from "./button";
 export { EmptyState, Notice, Skeleton } from "./feedback";
 export { FilterBar, FilterPills, FilterSearch } from "./filter-bar";

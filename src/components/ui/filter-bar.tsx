@@ -52,13 +52,21 @@ type PillsProps = {
   options: Array<{ value: string | undefined; label: string; count?: number }>;
 };
 
-/** A group of filter pills. `value: undefined` is the "All" option. */
+/**
+ * A group of filter pills. `value: undefined` is the "All" option.
+ * Clicking the selected pill again clears this filter.
+ */
 export function FilterPills({ basePath, params, param, label, options }: PillsProps) {
   const current = params[param];
   return (
     <nav aria-label={label} className="flex flex-wrap items-center gap-2">
       {options.map((o) => (
-        <Pill key={o.value ?? "all"} href={hrefWith(basePath, params, param, o.value)} selected={current === o.value} count={o.count}>
+        <Pill
+          key={o.value ?? "all"}
+          href={hrefWith(basePath, params, param, current === o.value ? undefined : o.value)}
+          selected={current === o.value}
+          count={o.count}
+        >
           {o.label}
         </Pill>
       ))}

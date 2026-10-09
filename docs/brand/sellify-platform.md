@@ -134,11 +134,13 @@ colour or size overrides.
 |---|---|---|
 | `Button` | primary · secondary · ghost · danger; sm (32px) · md (40px) | `href` renders a link styled as a button. `loading` shows a spinner. |
 | `SubmitButton` | same as Button | Shows a spinner while its form's action runs. |
-| `Pill` | one size (32px), selected / not | Filter pills. Selected = brand-soft. |
+| `Pill` | one size (32px), selected / not | Filter pills. Selected = brand-soft. Clicking a selected filter pill clears it. |
+| `ChoiceGroup` | same look as pills | Pick one of a few options (Cash / Card). Native radios in a fieldset. |
 | `Tag` | one style | Neutral property label (category, storage). |
 | `StatusBadge` | success · warning · danger · info · neutral · brand | Always includes a word, never colour alone. |
 | `FilterBar`, `FilterSearch`, `FilterPills` | — | Filters live in the URL. |
-| `Field` + `Input` / `Textarea` / `Select` | one size (40px) | Field owns the label, hint and error. Errors turn the border red. |
+| `Field` + `Input` / `Textarea` / `Select` | one size (40px) | Field owns the label, hint and error. Errors turn the border red. `Input` takes a `prefix` (€) or `suffix` (%, min). |
+| `FormStack`, `FormRow` (2 or 3 columns), `FormActions` | — | Form layout. |
 | `Switch`, `Checkbox` | — | Switch for on/off settings, Checkbox for choices in a list. |
 | `Table`, `THead`, `TBody`, `Tr`, `Th`, `Td`, `TableEmpty`, `TableFooter` | — | Inside `Card padding="none"`. |
 | `Card` | padding md / none | Optional title, description, actions. |

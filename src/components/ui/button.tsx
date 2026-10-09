@@ -48,6 +48,7 @@ export function buttonClasses(variant: ButtonVariant = "primary", size: ButtonSi
 export function Button(props: AsButton | AsLink) {
   const { variant = "primary", size = "md", fullWidth, loading, icon, children, ...rest } = props;
   const className = buttonClasses(variant, size, fullWidth);
+  const dataUi = `button-${variant}-${size}`;
   const content = (
     <>
       {loading ? <Spinner /> : icon}
@@ -57,7 +58,7 @@ export function Button(props: AsButton | AsLink) {
 
   if (rest.href !== undefined) {
     return (
-      <Link {...(rest as Omit<AsLink, keyof Common>)} className={className} aria-disabled={loading || undefined}>
+      <Link {...(rest as Omit<AsLink, keyof Common>)} className={className} data-ui={dataUi} aria-disabled={loading || undefined}>
         {content}
       </Link>
     );
@@ -69,6 +70,7 @@ export function Button(props: AsButton | AsLink) {
       {...buttonRest}
       type={type}
       className={className}
+      data-ui={dataUi}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
     >

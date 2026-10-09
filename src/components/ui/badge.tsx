@@ -19,7 +19,7 @@ const tones: Record<Tone, { box: string; dot: string }> = {
  */
 export function StatusBadge({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
-    <span className={cx("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-small font-medium whitespace-nowrap", tones[tone].box)}>
+    <span data-ui="status-badge" className={cx("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-small font-medium whitespace-nowrap", tones[tone].box)}>
       <span aria-hidden="true" className={cx("size-1.5 rounded-full", tones[tone].dot)} />
       {children}
     </span>
@@ -62,13 +62,13 @@ export function Pill({ children, selected = false, count, href, onClick }: PillP
   );
   if (href !== undefined) {
     return (
-      <Link href={href} className={className} aria-current={selected ? "page" : undefined} scroll={false}>
+      <Link href={href} className={className} data-ui="pill" aria-current={selected ? "page" : undefined} scroll={false}>
         {inner}
       </Link>
     );
   }
   return (
-    <button type="button" onClick={onClick} className={className} aria-pressed={selected}>
+    <button type="button" onClick={onClick} className={className} data-ui="pill" aria-pressed={selected}>
       {inner}
     </button>
   );

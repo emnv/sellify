@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-10-09 · Branch `main` · Last commit: `e15ae0e`
+Last updated: 2026-10-09 · Branch `main`
 
 The full plan is in [docs/implementation-plan.md](docs/implementation-plan.md), and the brief is in [sellify-plan.md](sellify-plan.md).
 
@@ -10,8 +10,8 @@ The full plan is in [docs/implementation-plan.md](docs/implementation-plan.md), 
 |---|---|---|
 | 0 | Project-local tooling (MCP, CLI tokens, env) | ✅ Done |
 | 1 | Foundation + Core stand-in data model, auth, onboarding | ✅ Done |
-| 2 | Part 1: Sellify brand guideline, shared UI components, all backend pages | ⏭️ **Next** |
-| 3 | 2.1 Publish + 2.5 Editing (host routing, store settings, draft/preview/publish) | ⬜ Not started |
+| 2 | Part 1: Sellify brand guideline, shared UI components, all backend pages | ✅ Done |
+| 3 | 2.1 Publish + 2.5 Editing (host routing, store settings, draft/preview/publish) | ⏭️ **Next** |
 | 4 | 2.3 Repair tab + 2.4 Sell tab (+ emails) | ⬜ Not started |
 | 5 | 2.2 Shop tab + Stripe checkout + webhook | ⬜ Not started |
 | 6 | 2.6 Three templates (Clean, Bold, Local) | ⬜ Not started |
@@ -20,7 +20,38 @@ The full plan is in [docs/implementation-plan.md](docs/implementation-plan.md), 
 | 9 | 2.9 Demo store "FixIt Galway", built through the UI | ⬜ Not started |
 | — | Deployment to Vercel (env vars, Stripe webhook, auth redirect URLs) | ⬜ Not started |
 
-## What exists now (Phase 1)
+## What exists now (Phase 2: Part 1)
+
+- **Brand guideline:** `docs/brand/sellify-platform.md` (colours with codes, type, spacing, corners,
+  shadows, layout, components, logo, tone of voice). **Rules for AI tools:** `CLAUDE.md`.
+- **Tokens:** `src/app/globals.css`. Tailwind's default palette, sizes, radii and shadows are
+  removed; only Sellify tokens exist. Primary buttons use the darker teal `#0F766E`, because
+  Sellify's `#14B8A6` with white text fails contrast (reason in the guideline).
+- **Shared components:** `src/components/ui`, about 30 (Button, Pill, ChoiceGroup, StatusBadge,
+  FilterBar, Field/Input/Select, Table, Card, Modal, PageHeader, AppShell, …). No `className` or
+  `style` props.
+- **Enforcement:** ESLint fails on raw controls, hex colours, palette classes, arbitrary values and
+  inline styles in backend pages. `npm run test:e2e` opens all 10 backend pages and fails if
+  pills, buttons, titles, inputs or page spacing differ (passing).
+- **Backend pages (all built from the kit):** login, sign-up, onboarding; Core stand-in:
+  - Inventory (list, add, edit, delete, photo upload)
+  - Point of sale
+  - Sales (list, detail)
+  - Repair tickets (list, new walk-in, detail with status)
+  - Repair prices
+  - Buybacks (list, detail with status)
+  - Buyback prices + condition deductions
+  - Settings
+- **Helpers:**
+  - `src/lib/money.ts`
+  - `src/lib/datetime.ts` (shop timezone)
+  - `src/core/catalog.ts` (cached device catalog)
+  - `src/components/media/image-uploader.tsx`
+  - `scripts/dev-user.mjs` (create or delete a confirmed test user)
+- **Buyback offer formula:** `computeOffer` in `src/core/buybacks.ts`. Deductions are added
+  together and capped at 100%. The Sell tab (Phase 4) must use the same function.
+
+## Phase 1 foundation
 
 **Database** (Supabase project `olsshrwrrbjwyuujrhub`, migrations in `supabase/migrations/`, all applied):
 - Core stand-in tables:
@@ -43,11 +74,10 @@ The full plan is in [docs/implementation-plan.md](docs/implementation-plan.md), 
   - `/login`, `/signup`
   - `/auth/confirm` (email link)
   - `/onboarding` (create shop)
-  - `/`: a temporary placeholder showing the shop name and a Log out button
+  - `/`: redirects to `/core/inventory` (no dashboard; Phase 3 points it at Online Store)
 - `src/lib/safe-next.ts`: guard against open redirects after login.
-- Login and onboarding forms are **basic and unstyled on purpose**. Phase 2 replaces them.
 
-**Tests:** `npm test` runs 25 tests.
+**Tests:** `npm test` runs 41 tests, and `npm run test:e2e` runs the Part 1 Playwright check (it needs the dev server).
 - `src/lib/safe-next.test.ts`: unit tests.
 - `tests/rls.test.ts`: integration tests against the real Supabase project. They create two throwaway shops and delete them afterwards.
 
@@ -92,7 +122,8 @@ The full plan is in [docs/implementation-plan.md](docs/implementation-plan.md), 
    npx supabase link --project-ref "$SUPABASE_PROJECT_REF" -p "$SUPABASE_DB_PASSWORD"
    ```
 6. Check everything works with `npm run typecheck && npm run lint && npm test && npm run build`. Then run `npm run dev`.
-7. To resume, tell Claude: *"Read STATUS.md and docs/implementation-plan.md, then start Phase 2."*
+7. To resume, tell Claude: *"Read STATUS.md and docs/implementation-plan.md, then start Phase 3."*
+8. For the e2e test, run once: `npx playwright install chromium`.
 
 ## Commands
 

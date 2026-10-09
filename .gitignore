@@ -33,3 +33,4 @@ supabase/.branches
 
 # playwright mcp artifacts
 .playwright-mcp/
+e2e/.auth/

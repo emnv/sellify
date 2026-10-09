@@ -4,7 +4,7 @@ import { cx } from "./cx";
 
 /** Content column inside the app shell: max width and page padding. */
 export function Page({ children }: { children: ReactNode }) {
-  return <div className="mx-auto flex w-full max-w-page flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">{children}</div>;
+  return <div data-ui="page" className="mx-auto flex w-full max-w-page flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">{children}</div>;
 }
 
 type PageHeaderProps = {
@@ -27,7 +27,7 @@ export function PageHeader({ title, description, actions, back }: PageHeaderProp
       ) : null}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="font-heading text-title font-bold text-fg">{title}</h1>
+          <h1 data-ui="page-title" className="font-heading text-title font-bold text-fg">{title}</h1>
           {description ? <p className="text-body text-fg-muted">{description}</p> : null}
         </div>
         {actions ? <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div> : null}
@@ -48,7 +48,7 @@ type CardProps = {
 /** White panel on the canvas. Groups one table, one form or one topic. */
 export function Card({ title, description, actions, padding = "md", children }: CardProps) {
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
+    <section data-ui="card" className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
       {title ? (
         <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-0.5">

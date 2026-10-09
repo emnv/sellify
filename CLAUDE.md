@@ -9,9 +9,9 @@ Read `STATUS.md` for where the project is. The full plan is in `docs/implementat
 Every page under `src/app/(backend)/` and `src/app/(auth)/` must look and behave like every other
 one. The design rules are in `docs/brand/sellify-platform.md`.
 
-1. **Use only `@/components/ui`.** It provides Button, SubmitButton, Pill, Tag, StatusBadge,
+1. **Use only `@/components/ui`.** It provides Button, SubmitButton, Pill, ChoiceGroup, Tag, StatusBadge,
    FilterBar, FilterSearch, FilterPills, Field, Input, Textarea, Select, Switch, Checkbox,
-   HiddenField, Table (THead, TBody, Tr, Th, Td, TableEmpty, TableFooter), Card, Modal, Page,
+   HiddenField, FormStack, FormRow, FormActions, Table (THead, TBody, Tr, Th, Td, TableEmpty, TableFooter), Card, Modal, Page,
    PageHeader, Grid, DetailList, Notice, EmptyState and Skeleton.
    - Never write raw `<button>`, `<input>`, `<select>`, `<textarea>`, `<table>` or `<dialog>`.
      ESLint fails the build.
@@ -38,7 +38,9 @@ one. The design rules are in `docs/brand/sellify-platform.md`.
    - Copy is sentence case. Buttons are verb + object. Errors say what to do. See the
      tone-of-voice section of the guideline.
    - New pages go in `src/app/(backend)/nav.ts`.
-4. Check with `npm run lint && npm run typecheck`.
+4. Check with `npm run lint && npm run typecheck`, and run `npm run test:e2e`: the Part 1 test
+   opens every backend page and fails if pills, buttons, titles, inputs or page spacing differ.
+   Add new pages to `e2e/part1-consistency.spec.ts`.
 
 ## Next.js 16 with Cache Components
 
