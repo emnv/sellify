@@ -6,6 +6,7 @@ import { z } from "zod";
 import { cancelUnstartedSale, createPendingOnlineSale, markSaleSession, quoteBasket, RESERVATION_MINUTES, type OrderQuote } from "@/core/api-orders";
 import { requireShop } from "@/core/shop";
 import { BASKET_MAX_LINES, BASKET_MAX_QTY, quoteLines } from "@/lib/basket-total";
+import { clientHash } from "@/lib/client-hash";
 import { DELIVERY_COUNTRIES, FULFILMENTS } from "@/lib/fulfilment";
 import { platformFeeCents, stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -74,7 +75,7 @@ export async function checkoutAction(storeKey: string, lines: unknown, fulfilmen
   if (!ctx || !ctx.config.content.tabs.shop) return { error: "This shop is not taking online orders right now." };
 
   // Validates basket, fulfilment and payments set-up, then holds the stock.
-  const pending = await createPendingOnlineSale(ctx.storeKey, parsed.data, { fulfilment: parsedFulfilment.data });
+  const pending = await createPendingOnlineSale(ctx.storeKey, parsed.data, { fulfilment: parsedFulfilment.data, clientHash: await clientHash() });
   if (!pending.ok) return { error: pending.error, quote: pending.quote };
 
   const origin = await requestOrigin();

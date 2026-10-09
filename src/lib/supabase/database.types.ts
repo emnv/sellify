@@ -537,6 +537,7 @@ export type Database = {
       sales: {
         Row: {
           channel: string
+          client_hash: string | null
           created_at: string
           customer_email: string | null
           customer_name: string | null
@@ -556,6 +557,7 @@ export type Database = {
         }
         Insert: {
           channel: string
+          client_hash?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -575,6 +577,7 @@ export type Database = {
         }
         Update: {
           channel?: string
+          client_hash?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null

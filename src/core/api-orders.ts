@@ -63,6 +63,9 @@ export { PAYMENTS_OFF_MESSAGE };
  * payments can be taken on the platform account (on by default; set
  * PLATFORM_CHARGES_FALLBACK=false once every live shop is connected).
  */
+const MAX_HOLDS_PER_CLIENT = 3;
+const MAX_HOLDS_PER_STORE = 50;
+
 export function platformChargesFallback() {
   return (process.env.PLATFORM_CHARGES_FALLBACK ?? "true").toLowerCase() !== "false";
 }
@@ -159,7 +162,7 @@ export type PendingSale =
 export async function createPendingOnlineSale(
   storeKey: string,
   lines: RequestedLine[],
-  options: { fulfilment: Fulfilment; email?: string | null },
+  options: { fulfilment: Fulfilment; email?: string | null; clientHash?: string | null },
 ): Promise<PendingSale> {
   const shop = await shopForCheckout(storeKey);
   if (!shop) return { ok: false, error: "This shop is not taking online orders right now." };
@@ -178,6 +181,24 @@ export async function createPendingOnlineSale(
   const deliveryFeeCents = deliveryFeeFor(options.fulfilment, shop.fulfilment);
   const totalCents = quote.totalCents + deliveryFeeCents;
   const admin = createAdminClient();
+
+  // Stock holds are a shared resource: cap how many one visitor (and the whole
+  // store) can hold at once, so nobody can lock up a shop's stock by opening
+  // checkouts without paying. Fails closed if the counts can't be read.
+  const clientHash = options.clientHash ?? null;
+  const [byClient, byStore] = await Promise.all([
+    clientHash
+      ? admin.from("sales").select("id", { count: "exact", head: true }).eq("shop_id", shop.shopId).eq("client_hash", clientHash).eq("status", "pending").not("reserved_until", "is", null)
+      : Promise.resolve({ count: 0, error: null }),
+    admin.from("sales").select("id", { count: "exact", head: true }).eq("shop_id", shop.shopId).eq("status", "pending").not("reserved_until", "is", null),
+  ]);
+  if (byClient.error || byStore.error) return { ok: false, error: "Something went wrong on our side. Try again in a minute.", quote };
+  if ((byClient.count ?? 0) >= MAX_HOLDS_PER_CLIENT) {
+    return { ok: false, error: "You already have checkouts open. Finish or close one of them, or try again in 30 minutes.", quote };
+  }
+  if ((byStore.count ?? 0) >= MAX_HOLDS_PER_STORE) {
+    return { ok: false, error: "We're busy right now. Try again in a few minutes.", quote };
+  }
   const { data: sale, error } = await admin
     .from("sales")
     .insert({
@@ -188,6 +209,7 @@ export async function createPendingOnlineSale(
       fulfilment: options.fulfilment,
       delivery_fee_cents: deliveryFeeCents,
       customer_email: options.email?.slice(0, 254) || null,
+      client_hash: clientHash,
     })
     .select("id")
     .single();
