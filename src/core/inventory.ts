@@ -41,7 +41,7 @@ export async function listProducts(shopId: string, filter: { q?: string; categor
   if (filter.online === "hidden") query = query.eq("visible_online", false);
   if (filter.q) {
     // Drop LIKE wildcards and PostgREST filter syntax characters from user input.
-    const term = filter.q.slice(0, 80).replace(/[%_\\,()."*:]/g, " ").trim();
+    const term = filter.q.slice(0, 80).replace(/[%_\\,()."*:]/g, " ").trim().split(/\s+/).join("%");
     if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%`);
   }
 

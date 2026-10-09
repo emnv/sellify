@@ -204,7 +204,7 @@ export async function listBuybacks(shopId: string, filter: { q?: string; status?
   if (filter.source && BUYBACK_SOURCES.some((s) => s.value === filter.source)) query = query.eq("source", filter.source);
   if (filter.q) {
     // Drop LIKE wildcards and PostgREST filter syntax characters from user input.
-    const term = filter.q.slice(0, 80).replace(/[%_\\,()."*:]/g, " ").trim();
+    const term = filter.q.slice(0, 80).replace(/[%_\\,()."*:]/g, " ").trim().split(/\s+/).join("%");
     if (term) query = query.or(`customer_name.ilike.%${term}%,customer_phone.ilike.%${term}%,device_label.ilike.%${term}%`);
   }
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" role="img" aria-label="FixIt Galway">
+  <!-- Mark: a phone with a wrench, sitting on a Galway Bay wave. -->
+  <rect width="640" height="640" rx="140" fill="#12263A"/>
+  <path d="M60 470 C 160 420, 230 520, 330 470 S 500 420, 580 470 L 580 580 L 60 580 Z" fill="#E2622F"/>
+  <path d="M60 500 C 160 450, 230 550, 330 500 S 500 450, 580 500" fill="none" stroke="#FBF6EE" stroke-width="14" stroke-linecap="round" opacity="0.9"/>
+  <rect x="215" y="90" width="210" height="350" rx="38" fill="#FBF6EE"/>
+  <rect x="240" y="130" width="160" height="250" rx="14" fill="#12263A"/>
+  <circle cx="320" cy="410" r="13" fill="#12263A"/>
+  <!-- Wrench across the screen -->
+  <g transform="rotate(-40 320 255)">
+    <rect x="300" y="170" width="40" height="190" rx="18" fill="#E2622F"/>
+    <path d="M320 120 a 62 62 0 1 0 0.1 0 Z M300 150 h40 v40 h-40 Z" fill="#E2622F" fill-rule="evenodd"/>
+  </g>
+</svg>

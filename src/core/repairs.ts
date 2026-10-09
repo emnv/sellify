@@ -44,7 +44,7 @@ export function formatDuration(minutes: number) {
 
 /** Drop LIKE wildcards and PostgREST filter syntax characters from user input. */
 function searchTerm(q: string | undefined) {
-  return (q ?? "").slice(0, 80).replace(/[%_\\,()."*:]/g, " ").trim();
+  return (q ?? "").slice(0, 80).replace(/[%_\\,()."*:]/g, " ").trim().split(/\s+/).join("%");
 }
 
 // ---------------------------------------------------------------------------

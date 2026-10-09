@@ -79,7 +79,7 @@ export async function listSales(shopId: string, filter: { q?: string; channel?: 
   }
   if (filter.q) {
     // Drop LIKE wildcards and PostgREST filter syntax characters from user input.
-    const term = filter.q.slice(0, 80).replace(/[%_\\,()."*:]/g, " ").trim();
+    const term = filter.q.slice(0, 80).replace(/[%_\\,()."*:]/g, " ").trim().split(/\s+/).join("%");
     if (term) query = query.ilike("customer_name", `%${term}%`);
   }
 
