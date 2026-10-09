@@ -94,8 +94,9 @@ export async function createOnlineRepairTicket(storeKey: string, input: RepairBo
     const slot = findAvailableSlot(input.scheduledAt, { hours: shop.hours, timeZone: shop.timezone, now, taken });
     if (!slot) return { ok: false, error: "That time is no longer available. Pick another.", field: "slot" };
 
-    const limited = await overLimit("repair_tickets", shop.shopId, input.customer.email);
-    if (limited) return { ok: false, error: limited };
+    // Cheap pre-check; the authoritative check runs after the insert below.
+    const preLimited = await overLimit("repair_tickets", shop.shopId, input.customer.email, false);
+    if (preLimited) return { ok: false, error: preLimited };
 
     const { data, error } = await admin
       .from("repair_tickets")
@@ -119,6 +120,13 @@ export async function createOnlineRepairTicket(storeKey: string, input: RepairBo
     if (error || !data) {
       console.error("[bookings] repair insert failed", error?.message);
       return FAILED;
+    }
+    // Authoritative limit: count with this row included, so parallel requests
+    // cannot all pass. Over the limit → remove the row before any email.
+    const postLimited = await overLimit("repair_tickets", shop.shopId, input.customer.email, true);
+    if (postLimited) {
+      await admin.from("repair_tickets").delete().eq("id", data.id).eq("shop_id", shop.shopId);
+      return { ok: false, error: postLimited };
     }
 
     return {
@@ -218,7 +226,12 @@ export type BuybackBooking = BuybackQuote & {
 const PER_EMAIL_PER_DAY = 3;
 const PER_STORE_PER_HOUR = 30;
 
-async function overLimit(table: "repair_tickets" | "buybacks", shopId: string, email: string): Promise<string | null> {
+/**
+ * `includesNew`: the count already contains this request's own row (the
+ * authoritative post-insert check), so the limit is exceeded at > instead of >=.
+ * Fails closed: if the counts can't be read, the request is refused.
+ */
+async function overLimit(table: "repair_tickets" | "buybacks", shopId: string, email: string, includesNew: boolean): Promise<string | null> {
   const admin = createAdminClient();
   const dayAgo = new Date(Date.now() - 24 * 3600_000).toISOString();
   const hourAgo = new Date(Date.now() - 3600_000).toISOString();
@@ -226,8 +239,13 @@ async function overLimit(table: "repair_tickets" | "buybacks", shopId: string, e
     admin.from(table).select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("source", "online").ilike("customer_email", email.replace(/[%_\\]/g, "\\$&")).gte("created_at", dayAgo),
     admin.from(table).select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("source", "online").gte("created_at", hourAgo),
   ]);
-  if ((byEmail.count ?? 0) >= PER_EMAIL_PER_DAY) return "You've already sent us a few requests today. Call the shop if you need another.";
-  if ((byStore.count ?? 0) >= PER_STORE_PER_HOUR) return "We're getting a lot of requests right now. Try again in a little while or call the shop.";
+  if (byEmail.error || byStore.error || byEmail.count === null || byStore.count === null) {
+    console.error("[bookings] limit check failed", byEmail.error?.message ?? byStore.error?.message);
+    return "Something went wrong on our side. Try again in a minute or call the shop.";
+  }
+  const over = (n: number, max: number) => (includesNew ? n > max : n >= max);
+  if (over(byEmail.count, PER_EMAIL_PER_DAY)) return "You've already sent us a few requests today. Call the shop if you need another.";
+  if (over(byStore.count, PER_STORE_PER_HOUR)) return "We're getting a lot of requests right now. Try again in a little while or call the shop.";
   return null;
 }
 
@@ -239,8 +257,8 @@ export async function createOnlineBuyback(storeKey: string, input: BuybackBookin
     const quote = await quoteFor(shop, input);
     if (!quote.ok) return quote;
 
-    const limited = await overLimit("buybacks", shop.shopId, input.customer.email);
-    if (limited) return { ok: false, error: limited };
+    const preLimited = await overLimit("buybacks", shop.shopId, input.customer.email, false);
+    if (preLimited) return { ok: false, error: preLimited };
 
     const { data, error } = await createAdminClient()
       .from("buybacks")
@@ -263,6 +281,11 @@ export async function createOnlineBuyback(storeKey: string, input: BuybackBookin
     if (error || !data) {
       console.error("[bookings] buyback insert failed", error?.message);
       return FAILED;
+    }
+    const postLimited = await overLimit("buybacks", shop.shopId, input.customer.email, true);
+    if (postLimited) {
+      await createAdminClient().from("buybacks").delete().eq("id", data.id).eq("shop_id", shop.shopId);
+      return { ok: false, error: postLimited };
     }
     return { ok: true, data: { ...quote.data, buybackId: data.id, shop, answers: input.answers, customer: input.customer } };
   } catch (e) {

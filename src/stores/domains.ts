@@ -144,21 +144,36 @@ export async function checkDomain(): Promise<DomainResult> {
   const { token, onVercel } = storedVerification(row);
   if (!token) return { ok: false, error: "Remove this domain and connect it again." };
 
-  // Step 1: ownership. Until the TXT record is found nothing touches Vercel.
+  // Step 1: ownership, re-checked on EVERY check (owners keep the TXT record).
+  // If a domain changes hands and the record disappears, it stops routing here.
+  const owned = await hasOwnershipRecord(current.domain, token);
+  if (!owned) {
+    if (onVercel) await removeProjectDomain(current.domain).catch(() => undefined);
+    await admin
+      .from("store_domains")
+      .update({
+        status: "pending",
+        verification: { records: [ownershipRecord(current.domain, token)], message: OWNERSHIP_MESSAGE, ownershipToken: token, onVercel: false } as unknown as Json,
+        checked_at: new Date().toISOString(),
+        last_error: onVercel ? "The ownership TXT record is gone, so the domain was disconnected. Add it back to reconnect." : null,
+      })
+      .eq("id", current.id)
+      .eq("store_id", store.row.id);
+    return {
+      ok: false,
+      error: onVercel
+        ? "We couldn't find your _sellify-verify TXT record any more, so the domain was disconnected. Add the record back, then check again."
+        : "We can't see the TXT record yet. DNS changes can take a while; try again later.",
+    };
+  }
   if (!onVercel) {
-    const owned = await hasOwnershipRecord(current.domain, token);
-    if (!owned) {
-      await admin
-        .from("store_domains")
-        .update({ checked_at: new Date().toISOString(), last_error: null })
-        .eq("id", current.id)
-        .eq("store_id", store.row.id);
-      return { ok: false, error: "We can't see the TXT record yet. DNS changes can take a while; try again later." };
-    }
     try {
       await addProjectDomain(current.domain);
     } catch (e) {
-      return { ok: false, error: addErrorMessage(e) };
+      // Already attached (e.g. an earlier check added it but failed to save):
+      // carry on and read its state below instead of failing.
+      const attached = await checkProjectDomain(current.domain).then((s) => s.status !== "error").catch(() => false);
+      if (!attached) return { ok: false, error: addErrorMessage(e) };
     }
   }
 
