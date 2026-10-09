@@ -49,12 +49,21 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
     ...parsed.data,
     options: { emailRedirectTo: `${origin}/auth/confirm?next=/onboarding` },
   });
-  if (error) return { error: error.message, email };
+  // Never echo provider errors: "already registered" and similar messages
+  // would reveal which emails have accounts. Only a weak password (which says
+  // nothing about the account) gets a specific message.
+  if (error) {
+    if (error.code === "weak_password") return { error: "Choose a stronger password.", email };
+    if (error.code !== "user_already_exists" && error.code !== "email_exists") {
+      return { error: "Could not create the account. Try again in a moment.", email };
+    }
+  }
 
   // Email confirmation off: signed in straight away.
-  if (data.session) redirect("/onboarding");
+  if (data?.session) redirect("/onboarding");
 
-  return { message: `We sent a confirmation link to ${parsed.data.email}. Open it to continue.`, email };
+  // Same answer whether or not the email already had an account.
+  return { message: `If ${parsed.data.email} can be used, we sent a confirmation link to it. Open it to continue.`, email };
 }
 
 export async function signOut() {

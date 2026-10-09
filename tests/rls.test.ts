@@ -155,6 +155,18 @@ describe.skipIf(!enabled)("RLS: shops only see their own data", () => {
     expect(reserved.error?.code).toBe("23514");
   });
 
+  it("members cannot publish by writing the publish columns directly", async () => {
+    const store = await A().client.from("stores").select("id").eq("shop_id", A().shopId).single();
+    const direct = await A().client
+      .from("stores")
+      .update({ is_published: true, published_config: { injected: true } })
+      .eq("id", store.data!.id);
+    expect(direct.error?.code).toBe("42501");
+
+    const draft = await A().client.from("stores").update({ draft_config: { ok: true } }).eq("id", store.data!.id);
+    expect(draft.error).toBeNull();
+  });
+
   it("media uploads are limited to the member's own shop folder", async () => {
     const png = Uint8Array.from(
       atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="),

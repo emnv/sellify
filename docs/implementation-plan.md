@@ -121,6 +121,7 @@ The Vercel CLI is always called with `--token $VERCEL_TOKEN`.
   - Tabs: show/hide Shop, Repair, Sell
   - Domain (Phase 7)
   - AI (Phase 8)
+- Members can write only `draft_config` (column grants); `is_published` / `published_config` are written by the publish server action with the service role after zod validation. The renderer also parses `published_config` with the same schema on read, and treats it as untrusted.
 - Edits go to `draft_config` only. **Preview** opens `/store/preview` (auth, renders `draft_config`). **Publish** copies draft → `published_config` and sets `is_published`. Public pages only ever read `published_config`.
 - Store config schema: one zod schema in `src/lib/store/config.ts`, split into `theme` (design) and `content`. It is the single source used by the editor, preview, publish and AI.
 
