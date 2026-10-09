@@ -19,8 +19,13 @@ the brief depends on. Everything in this list is **stand-in**, not a brief deliv
 - **Database:** `supabase/migrations/*_core_*.sql`. Store tables are in `*_stores_*.sql`.
 - **Code:** `src/core/**` and backend pages under `src/app/(backend)/core/**`. In the sidebar they
   are grouped under *Sellify Core (stand-in)*.
-- **The seam:** Stores code reaches Core only through `src/core/api.ts`. Swapping in the real
-  Sellify means reimplementing that one file.
+- **The seam:** Stores code reaches Core only through `src/core/api.ts` (reads, and the shop behind
+  a published store), `src/core/api-bookings.ts` (repair tickets and buybacks from the store) and
+  `src/core/api-orders.ts` (online orders and stock). Swapping in the real Sellify means
+  reimplementing those three files.
+- **Public reads:** the `public_*` SQL functions (migration `20261009100000_stores_public_api.sql`)
+  resolve a published store by slug or verified domain and return only its public data. Anonymous
+  visitors can't read any Core table directly.
 
 ## Security model
 
