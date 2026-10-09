@@ -24,7 +24,10 @@ How it stays separate:
 Decisions confirmed with the user:
 - **Stack:** Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres, Auth, Storage, RLS), deployed on Vercel.
 - **Services:** Resend for email, Stripe Checkout in test mode, and OpenAI for the AI customizer.
-- **Store addresses:** a domain the user owns, with Vercel nameservers and a wildcard. Set through the `STORES_ROOT_DOMAIN` env var. Stores live at `<slug>.<root>` and the backend at `app.<root>`.
+- **Store addresses:** two modes, picked by the `STORES_ROOT_DOMAIN` env var.
+  - **Empty (current: no domain yet):** everything runs on the Vercel default domain (`sellify-lemon.vercel.app`). Stores live at `/s/<slug>`, and the backend lives at the root.
+  - **Set to an owned domain** (Vercel nameservers + wildcard): stores live at `<slug>.<root>` and the backend at `app.<root>`. `/s/<slug>` keeps working and redirects to the subdomain.
+  - Per-store custom domains (Phase 7) work in both modes.
 - **GitHub:** the user creates an empty repo. Claude connects to it through the GitHub MCP server and the `gh` CLI, using a project-only token.
 - **No account-level credentials.** The claude.ai Supabase and Vercel connectors and the user's global CLI logins must not be used. All credentials live in gitignored files inside this project.
 
@@ -39,7 +42,7 @@ Files to create:
 | `.mcp.example.json` | Yes | Same file with `<PLACEHOLDER>` values |
 | `.claude/settings.json` | Yes | `enabledMcpjsonServers: ["supabase","vercel","github"]`; `permissions.deny: ["mcp__claude_ai_Supabase","mcp__claude_ai_Vercel","mcp__claude_ai_GitHub"]`; `deniedMcpServers: [{serverName:"claude.ai Supabase"},{serverName:"claude.ai Vercel"}]` |
 | `.claude/settings.local.json` | **No** | `env` for the CLIs Claude runs: `SUPABASE_ACCESS_TOKEN`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `GH_TOKEN`, `GITHUB_REPO_URL` |
-| `.env.local` / `.env.example` | No / Yes | App runtime: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `VERCEL_API_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, `STORES_ROOT_DOMAIN`, `APP_URL` |
+| `.env` / `.env.example` | No / Yes | App runtime: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `VERCEL_API_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, `STORES_ROOT_DOMAIN`, `APP_URL` |
 | `.gitignore` | Yes | Ignores `.mcp.json`, `.claude/settings.local.json`, `.env*.local`, `.vercel` |
 | `docs/SETUP.md` | Yes | The step-by-step guide below |
 
@@ -64,7 +67,7 @@ The Vercel CLI is always called with `--token $VERCEL_TOKEN`.
 3. **GitHub:** create an empty repo. Create a fine-grained PAT for that repo only with these permissions: Contents RW, Pull requests RW, Issues RW, Metadata R, Workflows RW.
 4. **Stripe** (test mode keys), **Resend** (API key plus a verified sender domain, or `onboarding@resend.dev` for testing), **OpenAI** (API key).
 5. **Domain:** move it to Vercel nameservers. The wildcard `*.<root>` and `app.<root>` get added to the Vercel project.
-6. Fill in `.mcp.json`, `.claude/settings.local.json` and `.env.local`.
+6. Fill in `.mcp.json`, `.claude/settings.local.json` and `.env`.
 7. Reload VS Code / Claude Code, approve the project servers, and run `/mcp` → `vercel` → Authenticate. **Open the auth link in a private window logged into the project's Vercel account**, so it does not use the existing account.
 8. Check with `/mcp`: `supabase`, `vercel` and `github` should be connected, and the claude.ai Supabase and Vercel connectors denied.
 
@@ -108,6 +111,7 @@ The Vercel CLI is always called with `--token $VERCEL_TOKEN`.
 ## Phase 3: Online Store, 2.1 Publish + 2.5 Editing (priority 2)
 - Host routing in Next middleware/`proxy.ts` (whichever the installed Next version uses):
   - `app.<root>`, `*.vercel.app` and localhost go to the backend.
+  - `/s/<slug>/...` on any backend host is rewritten to the store renderer. This is the only store URL while `STORES_ROOT_DOMAIN` is empty. A single helper, `storeUrl(store)`, builds every public link and the "live URL" shown in the editor, so switching modes means changing the env var only.
   - `<slug>.<root>` (also `<slug>.localhost` in dev) or a verified custom domain is rewritten to `src/app/(store)/_s/[host]/...`.
   - The host is resolved through the RPC `resolve_store_host(host)`, which returns only published stores.
 - Backend `Online Store` pages (`src/app/(backend)/store/...`):

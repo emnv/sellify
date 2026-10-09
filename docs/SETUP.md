@@ -8,7 +8,7 @@ connectors are blocked for this project by `.claude/settings.json`.
 |---|---|---|
 | `.mcp.json` | Supabase project ref + Supabase token, GitHub token | Claude Code MCP servers |
 | `.claude/settings.local.json` | Tokens for the CLIs Claude runs (Supabase CLI, Vercel CLI, git push) | Claude Code shell commands |
-| `.env.local` | App runtime keys (Supabase, Stripe, Resend, OpenAI, Vercel API, domain) | The Next.js app |
+| `.env` | App runtime keys (Supabase, Stripe, Resend, OpenAI, Vercel API, domain) | The Next.js app |
 
 Templates you can look at: `.mcp.example.json`, `.env.example`.
 
@@ -24,7 +24,7 @@ Templates you can look at: `.mcp.example.json`, `.env.example`.
 Fill in:
 - `.mcp.json` → replace `<SUPABASE_PROJECT_REF>` and `<SUPABASE_PERSONAL_ACCESS_TOKEN>`.
 - `.claude/settings.local.json` → `SUPABASE_ACCESS_TOKEN` (same token), `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`.
-- `.env.local` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+- `.env` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## 2. Vercel
 
@@ -35,7 +35,7 @@ Fill in:
 
 Fill in:
 - `.claude/settings.local.json` → `VERCEL_TOKEN`, `VERCEL_ORG_ID` (= team ID).
-- `.env.local` → `VERCEL_API_TOKEN` (same token), `VERCEL_TEAM_ID`.
+- `.env` → `VERCEL_API_TOKEN` (same token), `VERCEL_TEAM_ID`.
 
 The Vercel MCP server uses OAuth only, so it has no token in `.mcp.json`. You log it in at step 7.
 
@@ -58,22 +58,27 @@ and sends `GH_TOKEN` instead. Your other repos are not affected.
 ## 4. Stripe (test mode)
 
 Dashboard → toggle **Test mode** → Developers → API keys.
-`.env.local` → `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
+`.env` → `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 Leave `STRIPE_WEBHOOK_SECRET` empty. Claude creates the webhook endpoint at deploy time and tells you where to copy the secret from.
 
 ## 5. Resend (email)
 
-<https://resend.com> → API Keys → create one → `.env.local` `RESEND_API_KEY`.
+<https://resend.com> → API Keys → create one → `.env` `RESEND_API_KEY`.
 To email real customers, add and verify your domain under Domains, then set `EMAIL_FROM` to an address on it.
 Until then, use `EMAIL_FROM="Sellify <onboarding@resend.dev>"`. With that sender, Resend only delivers to your own Resend account email.
 
 ## 6. OpenAI
 
-<https://platform.openai.com/api-keys> → create a key → `.env.local` `OPENAI_API_KEY`. Leave `OPENAI_MODEL` empty; Claude sets it during the AI customizer phase.
+<https://platform.openai.com/api-keys> → create a key → `.env` `OPENAI_API_KEY`. Leave `OPENAI_MODEL` empty; Claude sets it during the AI customizer phase.
 
-## 7. Domain
+## 7. Domain (optional)
 
-1. In `.env.local`, set `STORES_ROOT_DOMAIN` to the domain you own (e.g. `mystores.com`).
+**No domain yet:** leave `STORES_ROOT_DOMAIN` empty. Everything runs on the Vercel default domain
+(e.g. `sellify-lemon.vercel.app`), and stores are served at `/s/<slug>`. Skip the rest of this step.
+
+**When you buy a domain:**
+
+1. In `.env`, set `STORES_ROOT_DOMAIN` to the domain you own (e.g. `mystores.com`).
 2. At your registrar, change the nameservers to Vercel's (`ns1.vercel-dns.com`, `ns2.vercel-dns.com`). Wildcard subdomains (`*.mystores.com`) need this. Claude adds `app.<domain>` and `*.<domain>` to the Vercel project at deploy time.
 
 ## 8. Activate the MCP servers in Claude Code
