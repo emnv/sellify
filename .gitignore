@@ -30,3 +30,6 @@ npm-debug.log*
 .vercel
 supabase/.temp
 supabase/.branches
+
+# playwright mcp artifacts
+.playwright-mcp/
