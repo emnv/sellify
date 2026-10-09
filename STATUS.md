@@ -32,6 +32,16 @@ Last updated: 2026-10-09 · Branch `main` · **All phases done; live in producti
   Paid, and stock went from 20 to 19.
 - **Emails:** sending runs but isn't delivered to these addresses (see Open items).
 
+## Added 2026-10-10 (your yes-to-all)
+
+- **Checkout:** stock held for the 30-minute payment window. It is released on expiry, cancel or the daily cron. Limits: 3 open checkouts per visitor (keyed hash of the network address) and 50 per store.
+- **Phone and fulfilment:** phone collected at Stripe Checkout. Customers choose **collection or delivery**; the delivery fee is set in Settings → Online orders, and the address is collected by Stripe (IE and GB).
+- **Stripe Connect:** shops connect their own account in Settings → Online payments. These are direct charges, because the platform account is in Australia and destination charges can't pay out across regions. `PLATFORM_FEE_BPS` sets the platform fee. **Connect isn't enabled on the Stripe account yet**, so unconnected shops are charged on the platform account (`PLATFORM_CHARGES_FALLBACK`, default on).
+- **Repairs:** "Repairs per time slot" setting; bookings are atomic per slot. The ticket list shows upcoming first (Upcoming / Past / All), and notes are kept as a history.
+- **Domains:** owner-only. The `www.` address is added as a 308 redirect to the bare domain. Domains are re-checked daily.
+- **Crons** (`vercel.json`, daily): `/api/cron/reservations` at 04:00 UTC and `/api/cron/domains` at 06:00 UTC, both protected by `CRON_SECRET`.
+- **Demo store:** delivery at €5 and 2 repairs per slot, set through the UI with `demo/configure-orders.mjs`. A delivery order was tested live and paid.
+
 ## Where things are
 
 | What | Where |
@@ -52,7 +62,7 @@ Last updated: 2026-10-09 · Branch `main` · **All phases done; live in producti
 
 | Command | What it runs |
 |---|---|
-| `npm test` | 115 tests: units, RLS, checkout integration |
+| `npm test` | 150 tests: units, RLS, checkout, repairs integration |
 | `npm run test:e2e` | Part 1 consistency across all backend pages, plus a duplicate-id check. Needs the dev server. |
 | `RUN_AI_LIVE=1 npx vitest run src/lib/ai/customizer.live.test.ts` | Live AI smoke test (needs OpenAI credits) |
 
@@ -65,8 +75,11 @@ See the end-of-build summary for the full list. Short version:
   mailer: 2 per hour).
 - [ ] **OpenAI:** add credits, then run the live AI test.
 - [ ] **Store domain:** buy a domain for `<slug>.<root>` addresses, or keep `/s/<slug>`.
-- [ ] **Payouts:** Stripe goes to one platform account (the checkout shows "Sellify"). Real
-  per-shop payouts need Stripe Connect.
+- [ ] **Stripe Connect:** enable Connect in the Stripe Dashboard (test mode) to accept its terms.
+  Then each shop clicks "Connect Stripe" in Settings. Once all shops are connected, set
+  `PLATFORM_CHARGES_FALLBACK=false`.
+- [ ] **Vercel Skew Protection:** turn it on (Project → Settings → Advanced). It stops a cached page
+  from an older deploy talking to the new server for a few minutes after each deploy.
 
 ## Continue on another device
 
