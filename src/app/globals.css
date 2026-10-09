@@ -85,6 +85,40 @@
   /* ---- Layout ----------------------------------------------------------- */
   --container-page: 75rem; /* 1200px max content width; sidebar is w-60 (240px) */
 
+  /* ---- Public store theme (NOT the Sellify brand) ------------------------ */
+  /* Set per store at runtime by <StoreFrame> from the store's theme config.  */
+  --color-store-bg: var(--store-bg);
+  --color-store-surface: var(--store-surface);
+  --color-store-text: var(--store-text);
+  --color-store-muted: var(--store-muted);
+  --color-store-border: var(--store-border);
+  --color-store-primary: var(--store-primary);
+  --color-store-on-primary: var(--store-on-primary);
+  --color-store-accent: var(--store-accent);
+  --color-store-on-accent: var(--store-on-accent);
+  --font-store-heading: var(--store-font-heading);
+  --font-store-body: var(--store-font-body);
+  --radius-store: var(--store-radius);
+  --text-store-xs: 0.75rem;
+  --text-store-xs--line-height: 1rem;
+  --text-store-sm: 0.875rem;
+  --text-store-sm--line-height: 1.25rem;
+  --text-store-base: 1rem;
+  --text-store-base--line-height: 1.5rem;
+  --text-store-lg: 1.125rem;
+  --text-store-lg--line-height: 1.75rem;
+  --text-store-xl: 1.25rem;
+  --text-store-xl--line-height: 1.75rem;
+  --text-store-2xl: 1.5rem;
+  --text-store-2xl--line-height: 2rem;
+  --text-store-3xl: 1.875rem;
+  --text-store-3xl--line-height: 2.25rem;
+  --text-store-4xl: 2.25rem;
+  --text-store-4xl--line-height: 2.5rem;
+  --text-store-5xl: 3rem;
+  --text-store-5xl--line-height: 1.1;
+  --radius-store-card: var(--store-radius-card);
+
   /* ---- Motion ----------------------------------------------------------- */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --default-transition-duration: 150ms;

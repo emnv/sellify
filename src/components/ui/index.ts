@@ -6,6 +6,8 @@ export { ChoiceGroup } from "./choice-group";
 export { Button, buttonClasses, type ButtonSize, type ButtonVariant } from "./button";
 export { EmptyState, Notice, Skeleton } from "./feedback";
 export { FilterBar, FilterPills, FilterSearch } from "./filter-bar";
+export { ColorInput } from "./color-input";
+export { TabNav } from "./tab-nav";
 export { Checkbox, Field, FormActions, FormRow, FormStack, HiddenField, Input, Select, Switch, Textarea } from "./form";
 export { Card, DetailList, Grid, Muted, Page, PageHeader, TextLink } from "./layout";
 export { Logo } from "./logo";

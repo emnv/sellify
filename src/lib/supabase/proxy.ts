@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
 
 // Paths reachable without signing in. Everything else is the backend.
-const PUBLIC_PREFIXES = ["/login", "/signup", "/auth/"];
+const PUBLIC_PREFIXES = ["/login", "/signup", "/auth/", "/api/stripe/"];
 
 export function isPublicPath(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p.endsWith("/") ? p : `${p}/`));

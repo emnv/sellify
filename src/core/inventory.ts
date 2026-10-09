@@ -17,19 +17,12 @@ export const PRODUCT_CATEGORIES = [
 ] as const;
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number]["value"];
 
-export const PRODUCT_CONDITIONS = [
-  { value: "new", label: "New" },
-  { value: "refurbished", label: "Refurbished" },
-  { value: "used", label: "Used" },
-] as const;
+export { PRODUCT_CONDITIONS, conditionLabel } from "./inventory-labels";
 
 export const LOW_STOCK = 2;
 
 export function categoryLabel(value: string) {
   return PRODUCT_CATEGORIES.find((c) => c.value === value)?.singular ?? value;
-}
-export function conditionLabel(value: string | null) {
-  return PRODUCT_CONDITIONS.find((c) => c.value === value)?.label ?? null;
 }
 
 export async function listProducts(shopId: string, filter: { q?: string; category?: string; online?: string }) {

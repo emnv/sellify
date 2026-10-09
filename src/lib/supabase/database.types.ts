@@ -749,6 +749,39 @@ export type Database = {
         Returns: string
       }
       finalize_online_sale: { Args: { p_sale_id: string }; Returns: boolean }
+      public_booked_slots: {
+        Args: { p_from: string; p_key: string; p_to: string }
+        Returns: string[]
+      }
+      public_buyback_options: { Args: { p_key: string }; Returns: Json }
+      public_products: {
+        Args: { p_key: string; p_product_id?: string }
+        Returns: {
+          category: string
+          condition: string
+          description: string
+          id: string
+          images: string[]
+          name: string
+          price_cents: number
+          stock_qty: number
+        }[]
+      }
+      public_repair_options: {
+        Args: { p_key: string }
+        Returns: {
+          brand: string
+          brand_id: number
+          duration_min: number
+          model: string
+          model_id: number
+          part_in_stock: boolean
+          price_cents: number
+          repair: string
+          repair_type_id: number
+        }[]
+      }
+      public_store: { Args: { p_key: string }; Returns: Json }
       record_pos_sale: {
         Args: {
           p_customer_name?: string

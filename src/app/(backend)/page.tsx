@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// No dashboard: the backend opens on Inventory. (Phase 3: Online Store.)
+// No dashboard: the backend opens on the Online Store.
 export default function BackendHome() {
-  redirect("/core/inventory");
+  redirect("/store");
 }

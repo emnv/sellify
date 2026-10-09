@@ -4,6 +4,10 @@ import type { NavGroup } from "@/components/ui";
 // for features the real Sellify already has (see docs/CORE-STANDIN.md).
 export const backendNav: NavGroup[] = [
   {
+    label: "Sellify Stores",
+    items: [{ href: "/store", label: "Online store" }],
+  },
+  {
     label: "Sellify Core (stand-in)",
     note: "Stands in for existing Sellify features.",
     items: [
