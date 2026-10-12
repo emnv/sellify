@@ -1,9 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { safeNextPath } from "@/lib/safe-next";
+import { serverEnv } from "@/lib/env.server";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthFormState = { error?: string; message?: string; email?: string };
@@ -43,7 +43,7 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
   const email = String(formData.get("email") ?? "");
   if (!parsed.success) return { error: parsed.error.issues[0].message, email };
 
-  const origin = await requestOrigin();
+  const origin = appOrigin();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     ...parsed.data,
@@ -55,7 +55,7 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
   if (error) {
     if (error.code === "weak_password") return { error: "Choose a stronger password.", email };
     if (error.code !== "user_already_exists" && error.code !== "email_exists") {
-      console.error("auth: sign-up failed", { code: error.code, status: error.status, message: error.message });
+      console.error("auth: sign-up failed", { code: error.code, status: error.status });
       if (isEmailSendError(error.code)) return { error: EMAIL_SEND_ERROR, email };
       return { error: "Could not create the account. Try again in a moment.", email };
     }
@@ -81,13 +81,13 @@ export async function requestPasswordReset(_prev: AuthFormState, formData: FormD
   const parsed = emailOnly.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { error: parsed.error.issues[0].message, email };
 
-  const origin = await requestOrigin();
+  const origin = appOrigin();
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo: `${origin}/auth/confirm?next=/reset-password`,
   });
   if (error) {
-    console.error("auth: password reset email failed", { code: error.code, status: error.status, message: error.message });
+    console.error("auth: password reset email failed", { code: error.code, status: error.status });
     if (isEmailSendError(error.code)) return { error: EMAIL_SEND_ERROR, email };
     return { error: "Could not send the reset link. Try again in a moment.", email };
   }
@@ -131,9 +131,8 @@ export async function signOut() {
   redirect("/login");
 }
 
-async function requestOrigin() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");
-  return host ? `${proto}://${host}` : (process.env.APP_URL ?? "http://localhost:3000");
+// Links in auth emails are built from the configured APP_URL, never the
+// request's Host header: a forged host would send reset tokens elsewhere.
+function appOrigin() {
+  return serverEnv().APP_URL.replace(/\/$/, "");
 }
