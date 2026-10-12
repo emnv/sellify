@@ -6,6 +6,8 @@ import { z } from "zod";
 import { stripeOnboardingUrl } from "@/core/payments";
 import { onlineOrdersSchema, readOnlineOrdersForm, readShopProfileForm, shopProfileSchema, updateOnlineOrders, updateShopProfile } from "@/core/settings";
 import { requireShop } from "@/core/shop";
+import { createPublicClient } from "@/lib/supabase/public";
+import { createClient } from "@/lib/supabase/server";
 
 export type ShopProfileState = {
   error?: string;
@@ -75,4 +77,47 @@ export async function connectStripe(): Promise<ConnectStripeState> {
     return { error: "We could not reach Stripe. Try again in a moment." };
   }
   redirect(url);
+}
+
+export type ChangePasswordState = {
+  error?: string;
+  saved?: boolean;
+  fieldErrors?: Partial<Record<string, string>>;
+};
+
+const changePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, "Enter your current password."),
+    new_password: z.string().min(8, "Use at least 8 characters.").max(72, "Use 72 characters or fewer."),
+    confirm_password: z.string(),
+  })
+  .refine((d) => d.new_password === d.confirm_password, { path: ["confirm_password"], message: "The passwords don't match." })
+  .refine((d) => d.new_password !== d.current_password, { path: ["new_password"], message: "Choose a password you haven't used here." });
+
+// Passwords are never sent back in state, so the fields clear after each try.
+export async function changePassword(_prev: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
+  const { user } = await requireShop();
+  const parsed = changePasswordSchema.safeParse({
+    current_password: formData.get("current_password") ?? "",
+    new_password: formData.get("new_password") ?? "",
+    confirm_password: formData.get("confirm_password") ?? "",
+  });
+  if (!parsed.success) return { error: "Check the highlighted fields.", fieldErrors: fieldErrors(parsed.error) };
+
+  // Check the current password on a cookie-less client so a wrong guess can't touch the session.
+  const { error: verifyError } = await createPublicClient().auth.signInWithPassword({
+    email: user.email,
+    password: parsed.data.current_password,
+  });
+  if (verifyError) return { error: "Check the highlighted fields.", fieldErrors: { current_password: "Your current password is wrong." } };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.new_password });
+  if (error) {
+    if (error.code === "weak_password") return { error: "Check the highlighted fields.", fieldErrors: { new_password: "Choose a stronger password." } };
+    if (error.code === "same_password") return { error: "Check the highlighted fields.", fieldErrors: { new_password: "Choose a password you haven't used here." } };
+    console.error("settings: could not change the password", { userId: user.id, code: error.code });
+    return { error: "Could not change the password. Try again in a moment." };
+  }
+  return { saved: true };
 }

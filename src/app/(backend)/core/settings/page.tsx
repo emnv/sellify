@@ -5,6 +5,7 @@ import { paymentsStatus, refreshStripeAccount, type PaymentsStatus } from "@/cor
 import { requireShop } from "@/core/shop";
 import { OnlineOrdersForm } from "./online-orders-form";
 import { OnlinePaymentsCard } from "./online-payments-card";
+import { PasswordForm } from "./password-form";
 import { ShopForm } from "./shop-form";
 
 export const metadata: Metadata = { title: "Settings · Sellify" };
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: "Settings · Sellify" };
 export default function SettingsPage({ searchParams }: PageProps<"/core/settings">) {
   return (
     <Page>
-      <PageHeader title="Settings" description="Your shop's details, online orders and payments." />
+      <PageHeader title="Settings" description="Your shop's details, online orders, payments and password." />
       <Suspense fallback={<Card><Skeleton lines={8} /></Card>}>
         <Settings searchParams={searchParams} />
       </Suspense>
@@ -29,7 +30,7 @@ function currencySymbol(currency: string) {
 }
 
 async function Settings({ searchParams }: Pick<PageProps<"/core/settings">, "searchParams">) {
-  const [{ shop, role }, sp] = await Promise.all([requireShop(), searchParams]);
+  const [{ user, shop, role }, sp] = await Promise.all([requireShop(), searchParams]);
   const returned = sp.stripe === "return" || sp.stripe === "refresh" ? sp.stripe : null;
 
   // Back from Stripe onboarding: read the account now rather than waiting for account.updated.
@@ -60,6 +61,7 @@ async function Settings({ searchParams }: Pick<PageProps<"/core/settings">, "sea
           ]}
         />
       </Card>
+      <PasswordForm email={user.email} />
     </>
   );
 }
