@@ -55,6 +55,12 @@ export function AuthForm({ mode, action }: Props) {
         {isLogin ? "Log in" : "Create account"}
       </Button>
 
+      {isLogin ? (
+        <p className="text-center text-body text-fg-muted">
+          <TextLink href="/forgot-password">Forgot your password?</TextLink>
+        </p>
+      ) : null}
+
       <p className="text-center text-body text-fg-muted">
         {isLogin ? (
           <>No account yet? <TextLink href="/signup">Sign up</TextLink></>
